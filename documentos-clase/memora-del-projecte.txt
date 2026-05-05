@@ -1,0 +1,86 @@
+La memòria
+Cal elaborar un document escrit, degudament estructurat, que reculli i reflecteixi el treball realitzat i el resultat aconseguit. La finalitat d'aquest document és comunicar, d'una manera organitzada, clara i precisa, els resultats o conclusions a què s'ha arribat, així com la feina realitzada, el procés seguit, els documents consultats i tots els elements que permetin verificar la validesa dels resultats. L'exposició estarà basada en aquest document.
+Tindrà com a màxim 20 pàgines. Cal tenir present que la memòria no és el manual tècnic.
+
+Estructura  de la Memòria
+1. Elements Preliminars
+1.1. Portada
+Títol del projecte
+Nom de l'autor/s
+Data
+Logotip (si escau)
+Versió del document
+1.2. Resum Executiu (1 pàgina)
+Síntesi del projecte
+Objectius principals
+Resultats clau aconseguits
+1.3. Índex/Sumari
+2. Cos Principal
+2.1. Introducció (1-2 pàgines)
+Context del projecte
+Objectius detallats
+Abast del projecte
+Metodologia utilitzada
+2.2. Planificació (2-3 pàgines)
+Pla de treball general
+Fases del projecte
+Cronograma
+Recursos necessaris
+Pla de treball detallat
+Tasques diàries/setmanals
+Fites assolides
+Desviacions de la planificació
+2.3. Desenvolupament del Projecte (6-8 pàgines)
+Descripció de la solució implementada
+Tecnologies utilitzades
+Arquitectura de la solució
+Funcionalitats principals
+Decisions tècniques rellevants
+2.4. Avaluació i Resultats (3-4 pàgines)
+Anàlisi del grau d'assoliment dels objectius
+Avaluació per punts:
+Objectius assolits
+Ampliacions realitzades
+Grau d'implementació
+Eines utilitzades
+Incidències i resolucions
+Problemes trobats
+Solucions aplicades
+Lliçons apreses
+3. Elements Finals
+3.1. Conclusions (1-2 pàgines)
+Resum dels resultats
+Valoració personal
+Propostes de millora
+Línies futures de desenvolupament
+3.2. Referències i Bibliografia
+Referències tècniques
+Bibliografia consultada
+Recursos web
+Eines utilitzades
+3.3. Annexos (no comptabilitzen en les 20 pàgines)
+Material complementari
+Documentació addicional
+Captures de pantalla
+Diagrames rellevants
+Recomanacions:
+Extensió
+
+Mantenir el límit de 20 pàgines
+Distribuir el contingut segons la importància relativa
+Usar els annexos per informació complementària
+Format
+
+Utilitzar una mida de lletra llegible (11-12 punts)
+Incloure gràfics i diagrames quan sigui necessari
+Mantenir consistència en l'estil
+Contingut
+
+Ser concís i precís
+Evitar redundàncies
+Mantenir el focus en els aspectes més rellevants
+Llenguatge
+
+Utilitzar un to professional
+Mantenir coherència terminològica
+Explicar els tecnicismes quan sigui necessari

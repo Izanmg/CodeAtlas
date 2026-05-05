@@ -1,0 +1,148 @@
+Manual d'usuari
+En anglès (user guide). Una guia de l'usuari, també conegut com un manual, és un document destinat a prestar assistència a les persones que utilitzen un sistema en particular. En general, és escrit per un tècnic, encara que pot ser escrit pel programador, gestor del projecte o del producte, personal tècnic o d'altre tipus.
+Les guies d'usuari estan habitualment associades amb productes electrònics, hardware i software.
+La majoria de guies d'usuari contenen a la vegada una guia escrita i imatges associades. En el cas de les aplicacions és habitual incloure captures de pantalla de la manera com es veu el programa, i en manuals de maquinari solen incloure diagrames simplificats. Estan escrites en un llenguatge adequat a l'audiència al que van dirigides i amb l'argot reduït al mínim o explicat a fons.
+
+Alguna part del manual pot estar feta a base de vídeotutorials.
+
+Les seccions més habituals d'un manual d'usuari sovint inclouen:
+
+Una portada
+Un prefaci, que conté detalls dels documents i la informació sobre la millor manera d'utilitzar la guia de l'usuari
+Una taula de continguts (TOC)
+Una guia ràpida sobre com usar les funcions principals del sistema
+El contingut detallat
+Una secció per la resolució de problemes
+Una secció de PMF (preguntes més freqüents)
+On trobar més ajuda i informació de contacte
+Un glossari (opcional)
+Un índex (opcional)
+Una contraportada
+Manual d'Usuari - Estructura Detallada
+1. Elements Introductoris
+1.1. Portada
+Nom de l'aplicació
+Versió
+Data d'actualització
+Logotip
+Informació de contacte bàsica
+1.2. Prefaci
+Com utilitzar aquest manual
+A qui va dirigit
+Convencions utilitzades en el document
+Icones i símbols
+Terminologia bàsica
+Notes i advertències
+1.3. Taula de Continguts
+2. Introducció a l'Aplicació
+2.1. Visió General
+Descripció general de l'aplicació
+Principals funcionalitats
+Requeriments del sistema
+Navegadors compatibles
+2.2. Primers Passos
+Com accedir a l'aplicació
+Procés de registre
+Inici de sessió
+Tour inicial de la interfície
+3. Guia Ràpida
+3.1. Funcions Essencials
+Resum de les operacions més comunes
+Dreceres de teclat principals
+Consells ràpids
+3.2. Interfície d'Usuari
+Elements principals de la pantalla
+Navegació bàsica
+Barra d'eines i menús
+4. Funcionalitats Detallades
+4.1. Mòdul [Nom del Mòdul 1]
+Descripció
+Captures de pantalla
+Passos detallats
+Exemples d'ús
+Vídeo tutorial (si escau)
+4.2. Mòdul [Nom del Mòdul 2]
+[Mateixa estructura que 4.1]
+
+[Repetir per cada mòdul principal]
+
+5. Procediments Pas a Pas
+5.1. Tasques Comunes
+Procediments detallats (Autentificació, perfil d'usuari, operacions bàsiques..)
+Captures de pantalla
+Consells i trucs
+Enllaços a vídeos tutorials
+5.2. Casos d'Ús
+Exemples pràctics
+Escenaris comuns
+Millors pràctiques
+6. Resolució de Problemes
+6.1. Problemes Comuns
+Descripció del problema
+Causes possibles
+Solucions pas a pas
+Captures de pantalla rellevants
+6.2. Preguntes Més Freqüents (PMF)
+Organitzades per categories
+Respostes clares i concises
+Enllaços a seccions relacionades
+7. Recursos Addicionals
+7.1. Suport
+Com obtenir ajuda
+Informació de contacte
+Horari d'atenció
+Canals de suport disponibles
+7.2. Recursos Complementaris
+Enllaços útils
+Vídeos tutorials addicionals
+Documents relacionats
+Comunitat d'usuaris
+8. Glossari (opcional)
+Termes tècnics
+Definicions
+Acrònims
+9. Índex Alfabètic (opcional)
+Recomanacions per a l'Elaboració
+Format i Estil
+
+Utilitzar un llenguatge clar i directe
+Incloure moltes captures de pantalla
+Mantenir consistència en el format
+Usar colors per destacar elements importants
+Contingut Multimèdia
+
+Integrar vídeos tutorials curts (2-3 minuts)
+Utilitzar infografies quan sigui possible
+Incloure diagrames explicatius
+Afegir enllaços interactius
+Accessibilitat
+
+Assegurar que el text sigui llegible
+Proporcionar alternatives textuals per imatges
+Mantenir una estructura clara i navegable
+Considerar versions per a diferents dispositius
+Actualització
+
+Versionar el document
+Mantenir un registre de canvis
+Actualitzar regularment els enllaços
+Revisar periòdicament el contingut
+Elements Interactius
+
+QR codes per accedir a vídeos
+Enllaços directes a seccions relacionades
+Formularis de feedback
+Checklist interactius
+Consideracions Especials
+
+Versió imprimible
+Versió en línia navegable
+Possibilitat de cercar contingut
+Adaptació a diferents nivells d'usuari
+El manual d'usuari ha de ser:
+
+Fàcil d'entendre
+Pràctic d'utilitzar
+Complet en contingut
+Accessible per a diferents tipus d'usuaris
+Actualitzable de manera eficient

@@ -1,0 +1,138 @@
+Què és un manual tècnic o documentació tècnica?
+És un manual escrit per tècnics i usat per / adreçat a tècnics. Descriu com funciona el sistema i els seus detalls tècnics (instal·lació, configuració, manteniment, ...). Els seus lectors necessiten tenir un coneixement expert per entendre el seu contingut.
+
+Ha d'incloure instruccions detallades de com muntar i configurar el sistema informàtic del projecte: fitxers de configuració, captures de pantalla  i explicacions detallades.
+
+Per saber-ne més:
+http://www.slideshare.net/Dolphinus/manuales-de-usuario-y-tecnico
+
+Estructura del Manual Tècnic
+1. Informació General
+Nom del projecte
+Versió del document
+Data d'última actualització
+Autors i responsables
+Historial de versions
+Propòsit del document
+2. Arquitectura del Sistema
+2.1 Visió General
+Diagrama d'arquitectura general
+Patrons de disseny utilitzats
+Stack tecnològic implementat
+2.2 Components Principals
+Frontend
+Backend
+Base de dades
+Serveis externs
+APIs
+3. Entorn Tècnic
+3.1 Requeriments de Hardware
+Servidor
+Capacitat d'emmagatzematge
+Memòria RAM recomanada
+Processador recomanat
+3.2 Requeriments de Software
+Sistema operatiu
+Servidor web
+Base de dades
+Framework utilitzat
+Llenguatges de programació
+Dependències i llibreries
+4. Configuració del Sistema
+4.1 Instal·lació
+Pas a pas del procés d'instal·lació
+Configuració de l'entorn
+Variables d'entorn necessàries
+Arxius de configuració
+4.2 Desplegament
+Procediment de desplegament
+Configuració de servidors
+Scripts necessaris
+Gestió de versions
+5. Base de Dades
+5.1 Model de Dades
+Diagrama ER
+Descripció de taules
+Relacions entre entitats
+Índexs i claus
+5.2 Scripts i Procediments
+Scripts de creació
+Procediments emmagatzemats
+Triggers
+Backups i recuperació
+6. Estructura del Codi
+6.1 Organització del Projecte
+Estructura de directoris
+Convencions de nomenclatura
+Patrons implementats
+6.2 Components Principals
+Mòduls
+Classes principals
+Interfícies
+Serveis
+7. APIs i Interfícies
+7.1 APIs Internes
+Endpoints disponibles
+Mètodes HTTP
+Formats de petició/resposta
+Autenticació i autorització
+7.2 APIs Externes
+Serveis de tercers utilitzats
+Configuració
+Gestió de credencials
+8. Seguretat
+8.1 Mecanismes de Seguretat
+Autenticació
+Autorització
+Encriptació
+Gestió de sessions
+8.2 Polítiques
+Control d'accés
+Gestió de contrasenyes
+Protocols de seguretat
+Logs i auditoria
+9. Monitorització i Manteniment
+9.1 Logs
+Sistema de logging
+Ubicació dels logs
+Format dels logs
+Rotació i retenció
+9.2 Monitorització
+Eines de monitorització
+Mètriques principals
+Alertes configurades
+10. Resolució de Problemes
+10.1 Problemes Comuns
+Llista de problemes freqüents
+Solucions documentades
+Procediments de diagnòstic
+10.2 Suport
+Contactes de suport
+Procediments d'escalat
+Recursos addicionals
+11. Annexos
+Glossari de termes
+Referències tècniques
+Documentació addicional
+Diagrames complementaris
+Recomanacions Generals
+Actualització Constant
+
+Mantenir el document actualitzat
+Registrar tots els canvis
+Versionar el document
+Claredat i Precisió
+
+Utilitzar llenguatge tècnic però clar
+Incloure exemples quan sigui necessari
+Mantenir coherència en la terminologia
+Format i Accessibilitat
+
+Utilitzar un format estàndard
+Incloure índex i referències creuades
+Facilitar la navegació pel document
+Contingut Multimèdia
+
+Incloure diagrames explicatius
+Screenshots rellevants
+Codi d'exemple quan sigui necessari
