@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lector Gantt — CodeAtlas</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-title">
+      <h1>Lector Gantt</h1>
+      <span class="subtitle">CodeAtlas — visor de planificación</span>
+    </div>
+    <div class="topbar-controls">
+      <label class="btn">
+        <input type="file" id="file-input" accept=".csv" hidden />
+        Cargar CSV…
+      </label>
+      <button id="reload-default" class="btn btn-secondary" type="button">
+        Recargar por defecto
+      </button>
+      <button id="export-pdf" class="btn btn-secondary" type="button">
+        Exportar PDF
+      </button>
+      <label class="toggle">
+        <input type="checkbox" id="toggle-deps" checked />
+        Dependencias
+      </label>
+    </div>
+  </header>
+
+  <section id="status" class="status"></section>
+
+  <main class="gantt" id="gantt">
+    <aside class="task-panel" id="task-panel">
+      <div class="task-panel-header">
+        <span class="col-check"></span>
+        <span class="col-id">#</span>
+        <span class="col-name">Tarea</span>
+        <span class="col-dates">Fechas</span>
+      </div>
+      <div class="task-panel-body" id="task-list"></div>
+    </aside>
+
+    <section class="timeline" id="timeline">
+      <div class="timeline-header" id="timeline-header"></div>
+      <div class="timeline-body" id="timeline-body">
+        <svg id="dep-layer" class="dep-layer" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+    </section>
+  </main>
+
+  <footer class="legend" id="legend"></footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
