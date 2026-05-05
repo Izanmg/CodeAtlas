@@ -3,6 +3,67 @@ const ROW_HEIGHT = 46;
 const DEFAULT_CSV = 'gantt-projectlibre.csv';
 const DONE_KEY = 'gantt-done-tasks';
 
+// Datos embebidos — respaldo automático cuando se abre via file://
+// Actualiza este bloque si modificas gantt-projectlibre.csv
+const FALLBACK_CSV_DATA = `ID,Task Name,Start Date,Duration,Predecessors,Group,Notes
+1,Definición final del proyecto,2026-05-06,1d,,Análisis y definición,Cerrar idea final
+2,Requisitos funcionales y no funcionales,2026-05-07,1d,1,Análisis y definición,
+3,Casos de uso y UML inicial,2026-05-08,1d,2,Análisis y definición,
+4,Sistema de gestión vía web y originalidad,2026-05-08,1d,2,Análisis y definición,
+5,Ampliaciones futuras y mantenimiento,2026-05-09,1d,3,Análisis y definición,
+6,Formato MD y transformación visual,2026-05-08,1d,2,Diseño funcional y técnico,
+7,Arquitectura general,2026-05-09,1d,6,Diseño funcional y técnico,
+8,Stack frontend y backend,2026-05-09,1d,7,Diseño funcional y técnico,
+9,Separación cliente servidor,2026-05-09,1d,7,Diseño funcional y técnico,
+10,Modelo de datos y web services,2026-05-10,1d,8,Diseño funcional y técnico,BD con al menos 3 entidades relacionadas
+11,Integración mínima de IA,2026-05-10,1d,10,Diseño funcional y técnico,
+12,Estrategia de autenticación,2026-05-10,1d,10,Diseño funcional y técnico,
+13,Planificación inicial y base del Gantt,2026-05-10,1d,7,Base del proyecto,
+14,Seguimiento semanal,2026-05-10,13d,13,Base del proyecto,Tarea continua
+15,Inicialización frontend y backend,2026-05-10,1d,8,Base del proyecto,
+16,Configuración de base de datos,2026-05-11,1d,10;15,Base del proyecto,
+17,Autenticación básica,2026-05-12,1d,12;16,Base del proyecto,
+18,Estructura principal del proyecto,2026-05-11,2d,15,Base del proyecto,
+19,Diseño de pantallas principales,2026-05-11,2d,15,Base del proyecto,
+20,Inicio parser MD,2026-05-11,1d,15,MVP documentación estructurada,
+21,Parser MD completo,2026-05-12,2d,20,MVP documentación estructurada,
+22,Subida y lectura de archivos MD,2026-05-14,1d,21,MVP documentación estructurada,
+23,Procesado de documentos,2026-05-15,1d,22,MVP documentación estructurada,
+24,Representación visual principal,2026-05-16,2d,23,MVP documentación estructurada,
+25,Integración frontend backend base de datos,2026-05-18,1d,24,MVP documentación estructurada,
+26,Pruebas base del MVP,2026-05-19,1d,25,MVP documentación estructurada,
+27,Planificación de tests,2026-05-19,1d,25,MVP documentación estructurada,
+28,Cierre MVP,2026-05-20,1d,26;27,MVP documentación estructurada,Hito
+29,Memoria primer avance,2026-05-12,5d,13,Documentación paralela,
+30,Manual técnico primer avance,2026-05-12,5d,13,Documentación paralela,
+31,Manual de usuario primer avance,2026-05-12,5d,13,Documentación paralela,
+32,Justificación plataforma desarrollo producción,2026-05-15,1d,29;30,Documentación paralela,
+33,Anexos iniciales,2026-05-16,1d,29;30;31,Documentación paralela,
+34,Análisis de aplicaciones ya creadas,2026-05-20,1d,28,Aplicación completa,
+35,Detección de archivos y módulos,2026-05-20,1d,34,Aplicación completa,
+36,Detección de funciones relaciones e imports,2026-05-21,1d,35,Aplicación completa,
+37,Transformación al formato CodeAtlas,2026-05-21,1d,36,Aplicación completa,
+38,Integración visual de la segunda funcionalidad,2026-05-22,1d,37,Aplicación completa,
+39,Revisión técnica global,2026-05-22,1d,38,Aplicación completa,
+40,Revisión de errores,2026-05-20,2d,28,Calidad y seguridad,
+41,Seguridad básica,2026-05-20,1d,28,Calidad y seguridad,
+42,Robustez ante fallos y ataques comunes,2026-05-21,1d,41,Calidad y seguridad,
+43,Responsive y multidispositivo,2026-05-22,1d,38,Calidad y seguridad,
+44,SSH seguro y HTTPS,2026-05-22,1d,39,Calidad y seguridad,
+45,Entorno de producción,2026-05-22,1d,39,Cierre y entrega,
+46,Despliegue y URL final,2026-05-22,1d,44;45,Cierre y entrega,
+47,Memoria final,2026-05-22,1d,29,Cierre y entrega,
+48,Manual técnico final,2026-05-22,1d,30,Cierre y entrega,
+49,Manual de usuario final,2026-05-22,1d,31,Cierre y entrega,
+50,Anexos finales,2026-05-22,1d,33,Cierre y entrega,
+51,Presentación multimedia,2026-05-22,1d,32,Cierre y entrega,
+52,Revisión texto diapositivas,2026-05-22,1d,51,Cierre y entrega,
+53,Guion final,2026-05-22,1d,51,Cierre y entrega,
+54,Exportación PDF y material Moodle/nube,2026-05-22,1d,47;48;49;50;51;53,Cierre y entrega,
+55,Defensa individual y ensayo,2026-05-22,1d,53,Cierre y entrega,
+56,Punto de innovación,2026-05-22,1d,39,Cierre y entrega,
+57,Entrega lista,2026-05-22,1d,54;55;56,Cierre y entrega,Hito final`;
+
 const statusEl = document.getElementById('status');
 const fileInput = document.getElementById('file-input');
 const reloadBtn = document.getElementById('reload-default');
@@ -275,6 +336,7 @@ function renderTasks(tasks, groupColors, calendar) {
       timelineBodyEl.appendChild(timelineRow);
 
       const startOffset = diffDays(calendar.start, task.start) * DAY_WIDTH;
+      const barWidth = Math.max(task.duration * DAY_WIDTH - 4, 16);
       if (task.isMilestone) {
         const marker = document.createElement('div');
         marker.className = `milestone${isDone ? ' done' : ''}`;
@@ -286,18 +348,32 @@ function renderTasks(tasks, groupColors, calendar) {
         const bar = document.createElement('div');
         bar.className = `bar${isDone ? ' done' : ''}`;
         bar.style.left = `${startOffset}px`;
-        bar.style.width = `${Math.max(task.duration * DAY_WIDTH - 4, 16)}px`;
+        bar.style.width = `${barWidth}px`;
         bar.style.background = isDone ? undefined : task.color;
-        bar.textContent = task.name;
         bar.title = `${task.name}\n${formatDate(task.start)} → ${formatDate(task.end)}`;
         bar.dataset.taskId = task.id;
         timelineRow.appendChild(bar);
+
+        const barLabel = document.createElement('span');
+        barLabel.className = 'bar-label';
+        barLabel.textContent = task.name;
+        barLabel.dataset.labelFor = task.id;
+        if (task.name.length * 6.5 + 12 <= barWidth) {
+          barLabel.classList.add('inside');
+          barLabel.style.left = `${startOffset + 6}px`;
+          barLabel.style.maxWidth = `${barWidth - 12}px`;
+        } else {
+          barLabel.classList.add('outside');
+          barLabel.style.left = `${startOffset + barWidth + 5}px`;
+          barLabel.style.color = isDone ? '#94a3b8' : task.color;
+        }
+        timelineRow.appendChild(barLabel);
       }
 
       layoutMap.set(task.id, {
         x: startOffset,
         y: rowIndex * ROW_HEIGHT + ROW_HEIGHT / 2,
-        width: task.isMilestone ? 0 : Math.max(task.duration * DAY_WIDTH - 4, 16),
+        width: task.isMilestone ? 0 : barWidth,
       });
       rowIndex++;
     });
@@ -330,6 +406,10 @@ function handleDoneToggle(e) {
     if (barEl.classList.contains('bar')) {
       const task = currentTasks.find((t) => t.id === taskId);
       barEl.style.background = isDone ? '' : (task ? task.color : '');
+      const labelEl = timelineBodyEl.querySelector(`.bar-label[data-label-for="${taskId}"]`);
+      if (labelEl && labelEl.classList.contains('outside')) {
+        labelEl.style.color = isDone ? '#94a3b8' : (task ? task.color : '');
+      }
     }
   }
 
@@ -417,11 +497,16 @@ async function loadDefaultCsv() {
   clearStatus();
   try {
     const response = await fetch(DEFAULT_CSV);
-    if (!response.ok) throw new Error('No se pudo cargar el CSV por defecto.');
+    if (!response.ok) throw new Error('fetch fallido');
     const text = await response.text();
     await loadCsvFromText(text);
-  } catch (error) {
-    showStatus(`${error.message} Puedes cargar un CSV manualmente.`, 'error');
+  } catch {
+    // Fallback: datos embebidos (funciona al abrir index.html directamente via file://)
+    try {
+      await loadCsvFromText(FALLBACK_CSV_DATA);
+    } catch (error) {
+      showStatus(`${error.message} Puedes cargar un CSV manualmente.`, 'error');
+    }
   }
 }
 
