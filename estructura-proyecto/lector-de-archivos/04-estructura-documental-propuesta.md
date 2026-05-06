@@ -60,22 +60,42 @@ Esto permitiría describir para cada pantalla:
 - qué papel cumple dentro de la aplicación
 
 ## 5. Bloque de flujos
-También conviene añadir un bloque de flujos funcionales.
 
-La idea sería mantener la misma lógica:
+Un flujo describe un **proceso concreto con pasos secuenciales**, no lo que muestra una pantalla. La diferencia es importante:
 
-- un documento general de flujos
+- Una **pantalla** describe qué ve el usuario: elementos, acciones posibles, estados.
+- Un **flujo** describe qué ocurre cuando el usuario hace algo que implica varias partes del sistema: qué pantallas intervienen, qué módulos participan, qué pasos sigue el sistema de principio a fin.
+
+Por ejemplo, el proceso de login no es una pantalla — es una secuencia: el usuario introduce credenciales, el frontend llama a la API, el backend valida contra la base de datos, devuelve un token, y el frontend redirige al dashboard. Eso es un flujo.
+
+### Cuándo crear un flujo
+
+Un flujo tiene sentido cuando el proceso:
+
+- Cruza más de una pantalla
+- Implica llamadas entre frontend y backend
+- Tiene pasos con lógica relevante que vale la pena documentar
+- Puede fallar de formas distintas según el paso en que esté
+
+### Cuándo no hace falta un flujo
+
+No toda pantalla necesita un flujo asociado. Si una pantalla simplemente carga datos al abrirse y los muestra, no hace falta documentarlo como flujo. El flujo aparece cuando hay un proceso con pasos, no cuando hay una pantalla con contenido.
+
+### Estructura
+
+La idea es mantener la misma lógica que el resto de bloques:
+
+- un documento general de flujos como índice
 - una carpeta de flujos con un archivo por cada flujo importante
 
-Por ejemplo, aquí podrían describirse flujos como:
+Algunos ejemplos de flujos con sentido real:
 
-- login
-- registro
-- creación de proyecto
-- lectura de documentación
-- generación de visualización
+- login: desde que el usuario envía el formulario hasta que llega al dashboard
+- registro: desde el formulario hasta la cuenta creada y la sesión iniciada
+- creación de proyecto: desde el formulario hasta el proyecto guardado y visible en el listado
+- generación de diagrama: desde que se suben los archivos hasta que el diagrama aparece en pantalla
 
-Esto ayuda a entender el comportamiento de la aplicación sin mezclarlo todo dentro de los módulos.
+Esto permite entender el comportamiento real de la aplicación más allá de lo que muestran las pantallas individualmente.
 
 ## 6. Bloque de bases de datos
 En lugar de un apartado genérico de datos, se plantea usar un bloque específico de bases de datos.
@@ -120,10 +140,12 @@ project-docs/
 ├── 04-database.md
 ├── 05-system-rules.md
 ├── modules/
-│   ├── auth-modules.md
-│   ├── project-management-modules.md
-│   ├── documentation-reader-modules.md
-│   └── diagram-generation-modules.md
+│   ├── backend/
+│   │   ├── auth-backend-modules.md
+│   │   └── projects-backend-modules.md
+│   └── frontend/
+│       ├── auth-frontend-modules.md
+│       └── projects-frontend-modules.md
 ├── screens/
 │   ├── login-screens.md
 │   ├── register-screens.md
@@ -148,7 +170,7 @@ La lógica de nombres propuesta busca que cada carpeta y archivo indique su fina
 
 Además, se propone una regla fija para los archivos de detalle: el nombre debe empezar por el identificador definido por el usuario para ese elemento y terminar con el mismo nombre de la carpeta en la que está.
 
-La fórmula sería esta:
+La fórmula general sería esta:
 
 `nombre-del-elemento` + `-` + `nombre-de-la-carpeta` + `.md`
 
@@ -156,10 +178,18 @@ Por ejemplo:
 
 - en `flows/`: `user-login-flows.md`
 - en `screens/`: `login-screens.md`
-- en `modules/`: `auth-modules.md`
 - en `database/`: `users-database.md`
 
-Así, cuando se vea el archivo, se sabrá enseguida qué elemento representa y a qué zona de la estructura pertenece.
+Para las carpetas que se dividen en subcarpetas por capa, la fórmula se extiende incluyendo el nombre de la capa en el nombre del archivo:
+
+`nombre-del-elemento` + `-` + `nombre-de-la-capa` + `-` + `nombre-de-la-carpeta` + `.md`
+
+Por ejemplo:
+
+- en `modules/backend/`: `auth-backend-modules.md`
+- en `modules/frontend/`: `auth-frontend-modules.md`
+
+Así, cuando se vea el archivo, se sabrá enseguida qué elemento representa, a qué capa pertenece y a qué zona de la estructura pertenece.
 
 ### Documentos principales
 - `00-overview.md`: documento principal de contexto general
@@ -176,24 +206,42 @@ El uso de numeración ayuda a mantener un orden estable y fácil de entender tan
 #### `modules/`
 La carpeta `modules/` contiene el desarrollo en detalle de cada módulo funcional definido en `01-modules.md`.
 
-La idea de esta carpeta es que cada archivo represente un módulo concreto de la aplicación y permita entenderlo sin depender solo del resumen general.
+A diferencia del resto de carpetas, `modules/` se divide en dos subcarpetas: `backend/` y `frontend/`. Esta decisión responde a que en una arquitectura con frontend y backend separados, los módulos de cada parte tienen naturalezas distintas y no conviene mezclarlos en el mismo nivel.
+
+- `modules/backend/`: módulos del servidor. Cada archivo describe un módulo de backend con sus endpoints de API, su relación con la base de datos, sus funciones principales y sus dependencias con otros módulos de backend.
+- `modules/frontend/`: módulos del cliente. Cada archivo describe un módulo de frontend con las pantallas que contiene, su estado interno, sus funciones y qué APIs de backend consume.
 
 Por ejemplo:
 
-- `auth-modules.md`
-- `project-management-modules.md`
-- `documentation-reader-modules.md`
-- `diagram-generation-modules.md`
+En `modules/backend/`:
+- `auth-backend-modules.md`
+- `projects-backend-modules.md`
 
-Cada uno de estos archivos debería explicar con más profundidad:
+En `modules/frontend/`:
+- `auth-frontend-modules.md`
+- `projects-frontend-modules.md`
+
+Esta separación permite generar dos diagramas distintos: uno para el backend y otro para el frontend. La conexión entre ambas capas se expresa mediante la referencia `consumes-api` en los módulos de frontend, que apunta a módulos de backend concretos.
+
+Cada archivo de módulo debería explicar con más profundidad:
 
 - cuál es el objetivo del módulo
 - qué problema resuelve dentro de la aplicación
-- qué pantallas se relacionan con él
 - qué funciones principales incluye
 - con qué otros módulos interactúa
+- en el caso del backend: qué endpoints expone y qué entidades de base de datos usa
+- en el caso del frontend: qué pantallas contiene y qué APIs consume
 
-Así, si alguien quiere entender solo el módulo de autenticación o solo el lector de documentación, puede ir directamente a ese archivo sin tener que reconstruir toda la información desde otros documentos.
+#### Decisión sobre subcarpetas por capa
+
+Solo la carpeta `modules/` utiliza subcarpetas de capa (`backend/` y `frontend/`). El resto de carpetas no necesitan esta división porque su naturaleza ya define a qué capa pertenecen:
+
+- `screens/`: pertenece exclusivamente al frontend. Dividirla no aportaría nada.
+- `flows/`: los flujos describen procesos completos que atraviesan ambas capas. Separarlos por capa rompería ese valor.
+- `database/`: pertenece exclusivamente al backend.
+- `05-system-rules.md`: recoge reglas globales que afectan a todo el sistema sin distinción de capa.
+
+Si en el futuro alguna otra carpeta necesitara esta misma división, se aplicaría el mismo criterio: subcarpetas `backend/` y `frontend/` dentro de la carpeta principal, con el nombre de la capa incluido en el nombre de cada archivo.
 
 #### `screens/`
 La carpeta `screens/` contiene un archivo por cada pantalla importante de la aplicación.
@@ -270,7 +318,8 @@ Eso permite identificar el contenido de cada archivo incluso fuera de su context
 
 Por ejemplo:
 
-- `auth-modules.md`: módulo de autenticación dentro de `modules/`
+- `auth-backend-modules.md`: módulo de autenticación de backend dentro de `modules/backend/`
+- `auth-frontend-modules.md`: módulo de autenticación de frontend dentro de `modules/frontend/`
 - `login-screens.md`: pantalla de login dentro de `screens/`
 - `user-login-flows.md`: flujo de inicio de sesión dentro de `flows/`
 - `users-database.md`: entidad de usuarios dentro de `database/`
@@ -282,7 +331,7 @@ La estructura base quedaría así:
 
 1. un documento principal de visión general
 2. un documento índice para módulos
-3. una carpeta `modules/` con un archivo por módulo
+3. una carpeta `modules/` con dos subcarpetas (`backend/` y `frontend/`) y un archivo por módulo en cada una
 4. un documento índice para pantallas y una carpeta `screens/`
 5. un documento índice para flujos y una carpeta `flows/`
 6. un documento índice de base de datos y una carpeta `database/`
@@ -303,4 +352,4 @@ Eso hace que la documentación sea más fácil de:
 - interpretar por CodeAtlas
 
 ## Siguiente paso natural
-Una vez validada esta estructura concreta, el siguiente paso sería definir la plantilla o contenido mínimo que debería tener cada tipo de Markdown.
+La estructura de carpetas y la convención de nombres están definidas. El siguiente paso es definir el contenido exacto de cada tipo de archivo Markdown: qué campos lleva el frontmatter, qué secciones debe tener y qué formato sigue cada campo para que el parser pueda interpretarlo de forma fiable.
