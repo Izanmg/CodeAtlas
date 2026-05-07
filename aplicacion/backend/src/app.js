@@ -1,10 +1,10 @@
 /**
  * app.js
  *
- * Builds and configures the Express application instance.
- * Registers global middleware (cors, json) and mounts module routers.
+ * Crea y configura la instancia de Express.
+ * Registra los middlewares globales (cors, json) y monta los routers de los módulos.
  *
- * Does not start the HTTP server — that is server.js.
+ * No arranca el servidor HTTP — esa responsabilidad es de server.js.
  */
 
 import express from 'express'
@@ -19,7 +19,7 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-// Module routes
+// Rutas de los módulos
 app.use('/api/parser', parserRoutes)
 
 export default app

@@ -1,17 +1,18 @@
 /**
  * parser.service.js
  *
- * Orchestrates the full parsing pipeline. Single entry point for the
- * controller. This file holds no business logic of its own — it only
- * calls the other pieces in the right order.
+ * Orquesta el pipeline completo de parseo. Único punto de entrada al módulo
+ * para el controller. Este archivo no tiene lógica de negocio propia — solo
+ * llama a las demás piezas en el orden correcto.
  *
  * Pipeline:
- *   1. sortFiles         — reorder so referenced files are processed first
- *   2. extractFromMarkdown — extract YAML and sections from each file
- *   3. validateAndParse  — parse YAML and validate frontmatter (throws)
- *   4. buildModel        — assemble the unified JSON model
- *   5. resolveReferences — warn about broken cross-file references
- *   6. saveModel         — persist the result
+ *   1. sortFiles            — reordena para procesar primero los referenciados
+ *   2. extractFromMarkdown  — extrae YAML y secciones de cada archivo
+ *   3. validateAndParse     — parsea el YAML y valida el frontmatter (lanza si falla)
+ *   4. buildModel           — ensambla el modelo JSON unificado
+ *   5. resolveReferences    — avisa de referencias cruzadas rotas
+ *   6. calculateLayout      — calcula coordenadas por defecto de cada nodo
+ *   7. saveModel            — persiste { model, layout }
  */
 
 import { extractFromMarkdown } from './sources/markdown-source.js'
@@ -19,15 +20,17 @@ import { parseYaml }           from './core/yaml-parser.js'
 import { validateFrontmatter } from './core/validator.js'
 import { buildModel }          from './core/model-builder.js'
 import { resolveReferences }   from './core/resolver.js'
+import { calculateLayout }     from './core/layout-calculator.js'
 import { saveModel }           from './parser.repository.js'
 
 /**
- * Runs the full parsing pipeline on the uploaded files.
+ * Ejecuta el pipeline completo de parseo sobre los archivos subidos.
  *
  * @param {Array<{filename: string, content: string}>} files
- * @returns {Promise<object>} The unified JSON model
- * @throws {Error} If any file fails frontmatter validation. The message
- *   starts with `[filename]` so the controller can map it to a 400 response.
+ * @returns {Promise<object>} El modelo JSON unificado
+ * @throws {Error} Si algún archivo falla la validación del frontmatter. El
+ *   mensaje empieza por `[nombre-archivo]` para que el controller lo mapee
+ *   a una respuesta 400.
  */
 export async function parseDocumentation(files) {
   const sorted    = sortFiles(files)
@@ -35,16 +38,17 @@ export async function parseDocumentation(files) {
   const parsed    = validateAndParse(extracted, sorted)
   const model     = buildModel(parsed)
   const resolved  = resolveReferences(model)
+  const layout    = calculateLayout(resolved)
 
-  await saveModel(resolved)
-  return resolved
+  await saveModel({ model: resolved, layout })
+  return { model: resolved, layout }
 }
 
 /**
- * Sorts files so that "earlier" files in the dependency chain are processed
- * before "later" ones. Modules before screens, screens before flows, and so
- * on. Files that don't match any bucket are appended at the end in their
- * original order.
+ * Ordena los archivos para que los "anteriores" en la cadena de dependencias
+ * se procesen antes que los "posteriores". Módulos antes que pantallas,
+ * pantallas antes que flujos, etc. Los archivos que no encajan en ningún
+ * bucket se añaden al final en su orden original.
  */
 function sortFiles(files) {
   const ORDER = [
@@ -72,9 +76,9 @@ function sortFiles(files) {
 }
 
 /**
- * Parses the YAML of every extracted file and validates its frontmatter.
- * Files without a YAML frontmatter are dropped silently.
- * If validation fails, the error propagates to the controller.
+ * Parsea el YAML de cada archivo extraído y valida su frontmatter.
+ * Los archivos sin frontmatter YAML se descartan en silencio.
+ * Si la validación falla, el error se propaga al controller.
  */
 function validateAndParse(extracted, sortedFiles) {
   return extracted
@@ -82,7 +86,7 @@ function validateAndParse(extracted, sortedFiles) {
       const yaml = parseYaml(item.yaml)
       if (!yaml) return null
 
-      // Throws on schema mismatch — caught at controller level
+      // Lanza si el schema no se cumple — se captura en el controller
       validateFrontmatter(yaml, item.yaml, sortedFiles[i].filename)
 
       return { yaml, sections: item.sections }

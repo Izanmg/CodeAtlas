@@ -1,87 +1,90 @@
 /**
  * validator.js
  *
- * Validates the parsed YAML frontmatter of each file against the schema
- * defined in frontmatter.config.js.
+ * Valida el frontmatter YAML ya parseado de cada archivo contra el schema
+ * definido en frontmatter.config.js.
  *
- * Throws a precise error (with filename and line number) on the first
- * problem it finds. The service does not catch validation errors — they
- * propagate up to the controller, which surfaces them as 400 Bad Request.
+ * Lanza un error preciso (con nombre de archivo y número de línea) en
+ * cuanto encuentra el primer problema. El service no captura los errores
+ * de validación — los deja subir hasta el controller, que los devuelve
+ * como 400 Bad Request.
  *
- * Errors always start with `[filename]` so the controller can recognize
- * them and distinguish them from internal errors (which become 500).
+ * Los errores siempre empiezan por `[nombre-archivo]` para que el
+ * controller pueda distinguirlos de los errores internos (que se mapean
+ * a 500).
  */
 
 import { FRONTMATTER_SCHEMA, VALID_TYPES, VALID_LAYERS } from './frontmatter.config.js'
 
 /**
- * Validates a parsed frontmatter object against the schema for its type.
+ * Valida un objeto de frontmatter parseado contra el schema de su tipo.
  *
- * @param {object} yamlObject - The parsed YAML object
- * @param {string} rawYaml - The original YAML string (used to compute line numbers)
- * @param {string} filename - The .md file name (used in error messages)
- * @throws {Error} Detailed message if any required field is missing or has the wrong type
+ * @param {object} yamlObject - El objeto YAML ya parseado
+ * @param {string} rawYaml - El string YAML original (usado para calcular líneas)
+ * @param {string} filename - Nombre del archivo .md (usado en los mensajes de error)
+ * @throws {Error} Mensaje detallado si falta un campo requerido o tiene un tipo incorrecto
  */
 export function validateFrontmatter(yamlObject, rawYaml, filename) {
-  // 1. `type` must always exist and be one of the recognized values
+  // 1. `type` siempre debe existir y ser uno de los valores reconocidos
   if (!yamlObject.type) {
-    throw new Error(`[${filename}] missing required field "type" in frontmatter`)
+    throw new Error(`[${filename}] falta el campo requerido "type" en el frontmatter`)
   }
   if (!VALID_TYPES.includes(yamlObject.type)) {
     const line = getFieldLine(rawYaml, 'type')
     throw new Error(
-      `[${filename}:${line}] unknown type "${yamlObject.type}". Valid types: ${VALID_TYPES.join(', ')}`
+      `[${filename}:${line}] tipo desconocido "${yamlObject.type}". Tipos válidos: ${VALID_TYPES.join(', ')}`
     )
   }
 
   const schema = FRONTMATTER_SCHEMA[yamlObject.type]
 
-  // 2. For modules, validate `layer` first because the next step depends on it
+  // 2. Para los módulos, validamos `layer` antes que el resto porque los
+  //    campos requeridos siguientes dependen de su valor
   if (yamlObject.type === 'module') {
     if (!yamlObject.layer) {
-      throw new Error(`[${filename}] missing required field "layer" in frontmatter`)
+      throw new Error(`[${filename}] falta el campo requerido "layer" en el frontmatter`)
     }
     if (!VALID_LAYERS.includes(yamlObject.layer)) {
       const line = getFieldLine(rawYaml, 'layer')
       throw new Error(
-        `[${filename}:${line}] invalid value "${yamlObject.layer}" for field "layer". Must be "backend" or "frontend"`
+        `[${filename}:${line}] valor inválido "${yamlObject.layer}" para el campo "layer". Debe ser "backend" o "frontend"`
       )
     }
   }
 
-  // 3. Build the effective list of required fields for this file
+  // 3. Construimos la lista efectiva de campos requeridos para este archivo
   let requiredFields = [...schema.required]
   if (yamlObject.type === 'module' && schema.requiredByLayer) {
     requiredFields = requiredFields.concat(schema.requiredByLayer[yamlObject.layer] ?? [])
   }
 
-  // 4. Check that every required field is present and not null
+  // 4. Comprobamos que todos los campos requeridos están presentes y no son null
   for (const field of requiredFields) {
     if (yamlObject[field] === undefined || yamlObject[field] === null) {
-      throw new Error(`[${filename}] missing required field "${field}" in frontmatter`)
+      throw new Error(`[${filename}] falta el campo requerido "${field}" en el frontmatter`)
     }
   }
 
-  // 5. Check that present fields have the expected type
+  // 5. Comprobamos que los campos presentes tienen el tipo esperado
   for (const [field, value] of Object.entries(yamlObject)) {
     const expectedType = schema.types[field]
-    if (!expectedType) continue   // unknown fields are tolerated, not validated
+    if (!expectedType) continue   // los campos desconocidos se toleran, no se validan
 
     const actualType = Array.isArray(value) ? 'array' : typeof value
     if (actualType !== expectedType) {
       const line = getFieldLine(rawYaml, field)
       throw new Error(
-        `[${filename}:${line}] field "${field}" must be ${expectedType}, got ${actualType}`
+        `[${filename}:${line}] el campo "${field}" debe ser ${expectedType}, recibido ${actualType}`
       )
     }
   }
 }
 
 /**
- * Locates the line number where `fieldName:` appears in the raw YAML.
- * Used to make error messages point at the offending line.
+ * Localiza el número de línea donde aparece `nombreCampo:` en el YAML original.
+ * Sirve para que los mensajes de error apunten exactamente a la línea problemática.
  *
- * @returns {number|string} 1-based line number, or '?' if not found
+ * @returns {number|string} Número de línea (base 1), o '?' si no se encuentra
  */
 function getFieldLine(rawYaml, fieldName) {
   const lines = rawYaml.split('\n')

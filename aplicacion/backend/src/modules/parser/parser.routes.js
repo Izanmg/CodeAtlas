@@ -1,12 +1,12 @@
 /**
  * parser.routes.js
  *
- * Defines the HTTP endpoints of the parser module and wires multer in
- * for the file upload middleware.
+ * Define los endpoints HTTP del módulo parser y conecta multer como
+ * middleware para la subida de archivos.
  *
- * memoryStorage is used on purpose: the parser only needs the file
- * contents in-memory for the duration of the request. Writing them to
- * disk would add I/O overhead and require cleanup logic.
+ * Se usa memoryStorage a propósito: el parser solo necesita el contenido
+ * de los archivos en memoria durante la petición. Escribirlos a disco
+ * añadiría I/O innecesario y obligaría a una lógica de limpieza posterior.
  */
 
 import { Router } from 'express'
@@ -17,7 +17,7 @@ const upload = multer({ storage: multer.memoryStorage() })
 
 const router = Router()
 
-// The form field MUST be named "files" — the frontend will use this name.
+// El campo del formulario DEBE llamarse "files" — el frontend usará este nombre.
 router.post('/doc',  upload.array('files'), parseDoc)
 router.post('/code', upload.array('files'), parseCode)
 

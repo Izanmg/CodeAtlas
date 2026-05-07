@@ -87,10 +87,11 @@ cd frontend && npm run dev
 
 ### Documentación en el código
 
-**Todo el código debe estar ampliamente documentado.** El objetivo es que cualquier persona pueda entender qué hace cada archivo, función y bloque de lógica sin necesidad de contexto externo.
+**Todo el código debe estar ampliamente documentado y la documentación debe estar siempre en español.** El objetivo es que cualquier persona pueda entender qué hace cada archivo, función y bloque de lógica sin necesidad de contexto externo.
 
 Reglas concretas:
 
+- **El idioma de la documentación es siempre español.** Todos los comentarios de bloque, JSDoc, comentarios inline y mensajes de error en consola deben estar en español.
 - **Cada archivo** debe empezar con un comentario de bloque que explique qué hace, de qué es responsable y qué no hace (límites de responsabilidad).
 - **Cada función exportada** debe tener un JSDoc con `@param`, `@returns` y una descripción de su propósito.
 - **La lógica no obvia** dentro de las funciones debe tener comentarios inline que expliquen el porqué, no el qué.
@@ -102,22 +103,22 @@ Ejemplo de lo que se espera:
 /**
  * yaml-parser.js
  *
- * Converts a raw YAML string into a plain JS object.
- * This is a thin wrapper around js-yaml that adds structured error handling.
+ * Convierte un string YAML en un objeto JS plano.
+ * Es un wrapper fino sobre js-yaml que añade un manejo de errores estructurado.
  *
- * Responsibility: format conversion only (YAML → JS object).
- * Does NOT validate field presence, types, or business rules — that is validator.js.
- * Does NOT transform field names to camelCase — that is model-builder.js.
+ * Responsabilidad: solo conversión de formato (YAML → objeto JS).
+ * NO valida la presencia de campos, ni los tipos, ni reglas de negocio — eso es validator.js.
+ * NO convierte los nombres de campo a camelCase — eso es model-builder.js.
  */
 
 import yaml from 'js-yaml'
 
 /**
- * Parses a YAML string and returns the resulting JS object.
+ * Parsea un string YAML y devuelve el objeto JS resultante.
  *
- * @param {string} yamlString - Raw YAML content extracted from a .md frontmatter block
- * @returns {object|null} Parsed JS object, or null if the input is empty
- * @throws {Error} If the YAML has syntax errors — includes line, column and a content preview
+ * @param {string} yamlString - Contenido YAML extraído del frontmatter de un .md
+ * @returns {object|null} Objeto JS parseado, o null si la entrada está vacía
+ * @throws {Error} Si el YAML tiene errores de sintaxis — incluye línea, columna y un fragmento del contenido
  */
 export function parseYaml(yamlString) {
   if (!yamlString || !yamlString.trim()) return null

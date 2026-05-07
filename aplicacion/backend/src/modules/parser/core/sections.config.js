@@ -1,17 +1,17 @@
 /**
  * sections.config.js
  *
- * Single source of truth for which Markdown `## Section` headers are expected
- * for each `type` of file. The model-builder uses this list to split sections
- * into two groups:
- *   - knownSections: parsed in a structured way (each type has its own fields)
- *   - extensions:    kept as-is and surfaced in the diagram as extra blocks
+ * Fuente de verdad de qué secciones Markdown (`## Nombre`) son las esperadas
+ * para cada `type` de archivo. El model-builder usa esta lista para separar
+ * las secciones en dos grupos:
+ *   - knownSections: se parsean de forma estructurada (cada tipo tiene sus campos)
+ *   - extensions:    se guardan tal cual y aparecen en el diagrama como bloques extra
  *
- * Adding or removing an expected section for a type only requires editing
- * this file — no need to touch the model-builder.
+ * Añadir o quitar secciones esperadas para un tipo solo requiere editar este
+ * archivo — no hay que tocar el model-builder.
  *
- * Section names are matched case-insensitively (everything is lowercased
- * during extraction), so list them here in lowercase.
+ * Los nombres de sección se comparan en minúsculas (todo se pasa a minúsculas
+ * durante la extracción), así que se listan aquí en minúsculas.
  */
 
 export const EXPECTED_SECTIONS = {

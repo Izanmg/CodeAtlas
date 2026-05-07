@@ -1,24 +1,27 @@
 /**
  * markdown-source.js
  *
- * Extracts the YAML frontmatter and Markdown sections from .md file contents.
+ * Extrae el frontmatter YAML y las secciones Markdown del contenido de
+ * cada archivo .md.
  *
- * Responsibility: pure extraction. It does not validate, does not transform,
- * does not know which sections are expected. Returns everything it finds and
- * lets later stages (validator, model-builder) decide what to do with it.
+ * Responsabilidad: extracción pura. No valida, no transforma y no sabe
+ * qué secciones son las esperadas. Devuelve todo lo que encuentra y deja
+ * que el resto del pipeline (validator, model-builder) decida qué hacer.
  *
- * Why it works on content strings instead of file handles:
- * the same function is reused by the future code parser, which will extract
- * @codeatlas blocks from source files, format them as .md content, and pass
- * them here. That keeps the pipeline shared and removes duplication.
+ * Por qué trabaja sobre strings de contenido y no sobre archivos:
+ * la misma función la reutiliza el futuro code parser, que extraerá
+ * bloques @codeatlas de archivos de código fuente, los formateará como
+ * contenido .md y los pasará por aquí. Así el pipeline es compartido y
+ * no hay lógica duplicada.
  */
 
 /**
- * Extracts YAML frontmatter and sections from each .md file in the array.
+ * Extrae el frontmatter YAML y las secciones de cada archivo .md del array.
  *
- * @param {Array<{filename: string, content: string}>} files - Array of file objects
+ * @param {Array<{filename: string, content: string}>} files - Array de archivos
  * @returns {Array<{filename: string, yaml: string, sections: object}>}
- *   One entry per file that has a frontmatter. Files without frontmatter are dropped.
+ *   Una entrada por cada archivo que tenga frontmatter. Los archivos sin
+ *   frontmatter se descartan.
  */
 export function extractFromMarkdown(files) {
   return files
@@ -27,8 +30,8 @@ export function extractFromMarkdown(files) {
 }
 
 /**
- * Processes a single file. Returns null if the file has no frontmatter,
- * which signals the caller to drop it.
+ * Procesa un único archivo. Devuelve null si el archivo no tiene
+ * frontmatter, lo que indica al llamador que debe descartarlo.
  */
 function extractOne({ filename, content }) {
   const yaml = extractFrontmatter(content)
@@ -39,8 +42,8 @@ function extractOne({ filename, content }) {
 }
 
 /**
- * Extracts the raw YAML string from between the two `---` delimiters.
- * Returns null if no frontmatter is found.
+ * Extrae el string YAML que hay entre los dos delimitadores `---`.
+ * Devuelve null si el archivo no tiene frontmatter.
  */
 function extractFrontmatter(content) {
   const match = content.match(/^---\n([\s\S]*?)\n---/)
@@ -48,17 +51,17 @@ function extractFrontmatter(content) {
 }
 
 /**
- * Extracts every `## Section` block as an object.
- * Keys are the section names lowercased and trimmed.
- * Values are the section bodies as strings (trimmed).
+ * Extrae cada bloque `## Sección` como un objeto.
+ * Las claves son los nombres de sección en minúsculas y sin espacios sobrantes.
+ * Los valores son los contenidos de cada sección como strings (recortados).
  *
- * Includes ALL sections found — both the ones defined in the format spec
- * (sections.config.js) and any unknown ones. The model-builder is responsible
- * for splitting them into knownSections vs extensions.
+ * Incluye TODAS las secciones encontradas — tanto las definidas en el formato
+ * (sections.config.js) como las desconocidas. La separación entre secciones
+ * conocidas y extensiones la hace model-builder.
  */
 function extractSections(content) {
   const sections = {}
-  // \Z is not supported in JS regex; we approximate "end of string" with $(?![\s\S])
+  // \Z no existe en regex de JS; aproximamos "fin de string" con $(?![\s\S])
   const sectionRegex = /^## (.+)$([\s\S]*?)(?=^## |$(?![\s\S]))/gm
 
   let match

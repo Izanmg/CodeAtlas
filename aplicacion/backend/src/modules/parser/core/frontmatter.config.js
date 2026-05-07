@@ -1,19 +1,19 @@
 /**
  * frontmatter.config.js
  *
- * Schema definition for the YAML frontmatter expected on each .md file type.
- * Derived from the format files in `estructura-proyecto/lector-de-archivos/`.
+ * Definición del schema del frontmatter YAML esperado en cada tipo de archivo.
+ * Derivado de los formatos definidos en `estructura-proyecto/lector-de-archivos/`.
  *
- * Each entry defines:
- *   - required:        fields that must always be present
- *   - requiredByLayer: extra fields required only for certain `layer` values
- *                      (currently only used by `module`)
- *   - optional:        fields that may be present
- *   - types:           expected JS type for each field
+ * Cada entrada define:
+ *   - required:        campos que siempre deben estar presentes
+ *   - requiredByLayer: campos extra requeridos solo para ciertos valores de `layer`
+ *                      (actualmente solo lo usa `module`)
+ *   - optional:        campos que pueden estar presentes
+ *   - types:           tipo JS esperado para cada campo
  *                      ('string', 'boolean', 'array', 'object')
  *
- * The validator uses this to throw precise errors pointing to the offending
- * file and line when something does not match the schema.
+ * El validator usa este schema para lanzar errores precisos que apuntan al
+ * archivo y la línea exactos cuando algo no encaja.
  */
 
 export const FRONTMATTER_SCHEMA = {
@@ -106,8 +106,8 @@ export const FRONTMATTER_SCHEMA = {
   }
 }
 
-/** All valid `type` values that the parser recognizes. */
+/** Todos los valores válidos para el campo `type` que el parser reconoce. */
 export const VALID_TYPES = Object.keys(FRONTMATTER_SCHEMA)
 
-/** Valid `layer` values for `module` files. */
+/** Valores válidos para el campo `layer` en archivos de tipo `module`. */
 export const VALID_LAYERS = ['backend', 'frontend']

@@ -1,31 +1,36 @@
 /**
  * parser.repository.js
  *
- * Persists and retrieves the unified JSON model.
+ * Persiste y recupera el diagrama generado por el parser.
  *
- * The database is not configured yet, so this is a temporary in-memory
- * implementation. The function signatures are designed to match what a
- * real DB implementation will need, so once the DB is wired up only this
- * file changes — the service does not need to be touched.
+ * La base de datos todavía no está configurada, así que esta es una
+ * implementación temporal en memoria. Las firmas de las funciones están
+ * pensadas para coincidir con lo que necesitará la implementación real
+ * con BD, de forma que cuando se conecte la base de datos solo cambie
+ * este archivo — el service no necesita tocarse.
+ *
+ * El diagrama guardado tiene la forma { model, layout } donde:
+ *   - model: el modelo JSON unificado generado por el parser
+ *   - layout: las coordenadas por defecto de cada nodo (calculadas por layout-calculator)
  */
 
-let storedModel = null
+let storedDiagram = null
 
 /**
- * Saves the unified JSON model.
+ * Guarda el diagrama (modelo + layout).
  *
- * @param {object} model - The unified JSON model to persist
+ * @param {{ model: object, layout: object }} diagram
  * @returns {Promise<void>}
  */
-export async function saveModel(model) {
-  storedModel = model
+export async function saveModel(diagram) {
+  storedDiagram = diagram
 }
 
 /**
- * Retrieves the saved model, or null if nothing has been saved yet.
+ * Recupera el diagrama guardado, o null si todavía no se ha guardado nada.
  *
- * @returns {Promise<object|null>}
+ * @returns {Promise<{ model: object, layout: object }|null>}
  */
 export async function getModel() {
-  return storedModel
+  return storedDiagram
 }

@@ -1,25 +1,25 @@
 /**
  * model-builder.js
  *
- * Assembles the unified JSON model from the array of parsed files.
+ * Ensambla el modelo JSON unificado a partir del array de archivos parseados.
  *
- * Responsibility: data transformation. Takes the raw output of the YAML and
- * Markdown parsers, converts kebab-case fields to camelCase, parses list
- * sections into JS arrays, and groups each file into the correct slot of
- * the unified model.
+ * Responsabilidad: transformación de datos. Toma la salida cruda de los parsers
+ * de YAML y Markdown, convierte los campos de kebab-case a camelCase, parsea
+ * las secciones de tipo lista a arrays JS y agrupa cada archivo en el slot
+ * correspondiente del modelo.
  *
- * Does NOT validate (validator.js).
- * Does NOT extract content (markdown-source.js).
- * Does NOT resolve cross-file references (resolver.js).
+ * NO valida (eso es validator.js).
+ * NO extrae contenido (eso es markdown-source.js).
+ * NO resuelve referencias entre archivos (eso es resolver.js).
  */
 
 import { EXPECTED_SECTIONS } from './sections.config.js'
 
 /**
- * Builds the unified JSON model from a list of parsed files.
+ * Construye el modelo JSON unificado a partir de la lista de archivos parseados.
  *
  * @param {Array<{yaml: object, sections: object}>} parsedFiles
- * @returns {object} The unified JSON model
+ * @returns {object} El modelo JSON unificado
  */
 export function buildModel(parsedFiles) {
   const model = {
@@ -39,14 +39,14 @@ export function buildModel(parsedFiles) {
 }
 
 /**
- * Routes each file to its constructor function based on `yaml.type`,
- * and pushes the result into the correct slot of the model.
+ * Encamina cada archivo a su función constructora según `yaml.type` y mete
+ * el resultado en el slot correcto del modelo.
  */
 function dispatch(model, yaml, knownSections, extensions) {
   switch (yaml.type) {
     case 'modules-index':
-      // The index file contributes nothing to the model. It only exists
-      // so the validator can confirm the project declares its file-types.
+      // El archivo índice no aporta nada al modelo. Solo existe para que el
+      // validator pueda confirmar que el proyecto declara sus file-types.
       break
 
     case 'module': {
@@ -72,16 +72,16 @@ function dispatch(model, yaml, knownSections, extensions) {
       break
 
     default:
-      // The validator should already have rejected unknown types, but
-      // we log just in case it changes in the future.
-      console.warn(`[model-builder] Unknown type "${yaml.type}", skipping`)
+      // El validator debería haber rechazado los tipos desconocidos antes,
+      // pero logueamos por si en el futuro cambia esa lógica.
+      console.warn(`[model-builder] Tipo desconocido "${yaml.type}", se ignora`)
   }
 }
 
 /**
- * Splits a sections object into the two buckets the model uses:
- *   - knownSections: declared in sections.config.js for this type
- *   - extensions:    everything else, kept verbatim for the diagram
+ * Separa un objeto de secciones en los dos grupos que usa el modelo:
+ *   - knownSections: declaradas en sections.config.js para este tipo
+ *   - extensions:    todo lo demás, conservado tal cual para el diagrama
  */
 function splitSections(type, sections) {
   const expected = EXPECTED_SECTIONS[type] ?? []
@@ -99,7 +99,7 @@ function splitSections(type, sections) {
   return { knownSections, extensions }
 }
 
-// ---------- Constructors ----------
+// ---------- Constructores ----------
 
 function buildModule(yaml, knownSections, extensions) {
   const base = {
@@ -193,11 +193,11 @@ function buildSystemRules(yaml, knownSections, extensions) {
   }
 }
 
-// ---------- Helpers ----------
+// ---------- Funciones auxiliares ----------
 
 /**
- * Converts a Markdown list block ("- item" or "1. item") into an array of
- * trimmed strings. Empty lines are dropped.
+ * Convierte un bloque de lista Markdown ("- item" o "1. item") en un array
+ * de strings recortados. Las líneas vacías se descartan.
  */
 function parseList(text) {
   if (!text) return []
@@ -209,9 +209,10 @@ function parseList(text) {
 }
 
 /**
- * Converts the `## Functions` section into an object keyed by file id.
- * If `### subsection` headers are present, each becomes a key. Otherwise
- * everything goes under the `_` key as a flat list.
+ * Convierte la sección `## Functions` en un objeto donde cada clave es el
+ * id de un archivo. Si hay subsecciones `### subsección`, cada una se
+ * convierte en una clave. Si no las hay, todo va bajo la clave `_` como
+ * lista plana.
  */
 function parseFunctions(text) {
   if (!text) return {}
@@ -228,7 +229,7 @@ function parseFunctions(text) {
     }
 
     const fn = line.replace(/^[-*]\s+/, '').trim()
-    if (fn && fn !== line) {       // line had a list marker
+    if (fn && fn !== line) {       // la línea tenía marcador de lista
       if (!result[currentKey]) result[currentKey] = []
       result[currentKey].push(fn)
     }
