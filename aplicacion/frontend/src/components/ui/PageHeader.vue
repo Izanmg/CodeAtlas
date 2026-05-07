@@ -16,8 +16,8 @@ defineProps({
 </script>
 
 <template>
-  <div class="flex justify-between items-start flex-wrap mb-6" style="gap: 24px;">
-    <div class="min-w-0" style="flex: 1 1 480px;">
+  <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-6" style="gap: 12px;">
+    <div class="min-w-0" style="flex: 1 1 0;">
       <div
         v-if="eyebrow || $slots.eyebrow"
         class="font-mono text-fg-subtle uppercase mb-1.5 font-medium"
@@ -27,7 +27,7 @@ defineProps({
       </div>
       <h1
         class="text-fg font-semibold m-0"
-        style="font-size: 24px; letter-spacing: -0.02em; line-height: 1.2;"
+        style="font-size: clamp(20px, 4vw, 24px); letter-spacing: -0.02em; line-height: 1.2;"
       >
         {{ title }}
       </h1>
@@ -41,7 +41,7 @@ defineProps({
     </div>
     <div
       v-if="$slots.actions"
-      class="flex items-center flex-shrink-0"
+      class="flex items-center flex-wrap flex-shrink-0"
       style="gap: 8px;"
     >
       <slot name="actions" />

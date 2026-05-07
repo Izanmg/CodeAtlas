@@ -8,7 +8,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import Card from '@/components/ui/Card.vue'
 import DiagramThumb from './DiagramThumb.vue'
-import { timeAgo } from '../logica-temporal/time-format'
+import { timeAgo } from '../utils/time-format'
 
 const props = defineProps({
   diagram: { type: Object, required: true },
@@ -16,15 +16,12 @@ const props = defineProps({
 
 const router = useRouter()
 
-const stats = computed(() => {
-  const d = props.diagram.data
-  return {
-    modules: d.modules.backend.length + d.modules.frontend.length,
-    screens: d.screens.length,
-    tables: d.database.length,
-    flows: d.flows.length,
-  }
-})
+const stats = computed(() => ({
+  modules: props.diagram.countModules ?? 0,
+  screens: props.diagram.countScreens ?? 0,
+  tables:  props.diagram.countTables  ?? 0,
+  flows:   props.diagram.countFlows   ?? 0,
+}))
 
 function open() {
   router.push(`/diagrams/${props.diagram.id}`)

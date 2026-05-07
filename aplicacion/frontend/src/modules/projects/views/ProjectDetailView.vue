@@ -20,7 +20,7 @@ import SectionLabel from '../components/SectionLabel.vue'
 import EmptyState from '../components/EmptyState.vue'
 import DiagramCard from '../components/DiagramCard.vue'
 
-import { timeAgo, fullDate } from '../logica-temporal/time-format'
+import { timeAgo, fullDate } from '../utils/time-format'
 import { Plus, Upload, Network, AlertCircle, Folder } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -55,7 +55,8 @@ function newDiagram() {
   <AppShell :breadcrumbs="breadcrumbs">
     <div
       v-if="project"
-      :style="{ padding: '32px 32px 64px', maxWidth: '1240px', margin: '0 auto' }"
+      class="px-4 sm:px-8 pt-6 sm:pt-8 pb-16"
+      style="max-width: 1240px; margin: 0 auto;"
     >
       <PageHeader
         :title="project.name"
@@ -73,13 +74,8 @@ function newDiagram() {
       </PageHeader>
 
       <div
-        class="bg-surface rounded-lg overflow-hidden"
-        :style="{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          border: '1px solid var(--border)',
-          marginBottom: '28px',
-        }"
+        class="bg-surface rounded-lg overflow-hidden grid grid-cols-1 sm:grid-cols-3"
+        :style="{ border: '1px solid var(--border)', marginBottom: '28px' }"
       >
         <StatCell label="Diagramas" :value="diagrams.length" icon-color="var(--kind-backend)">
           <template #icon><Network :size="15" /></template>
@@ -119,11 +115,8 @@ function newDiagram() {
 
       <div
         v-else
-        class="grid"
-        :style="{
-          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-          gap: '14px',
-        }"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+        style="gap: 14px;"
       >
         <DiagramCard
           v-for="d in diagrams"

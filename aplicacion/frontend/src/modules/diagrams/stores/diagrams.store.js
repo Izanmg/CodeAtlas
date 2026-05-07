@@ -1,13 +1,6 @@
-/**
- * diagrams.store.js
- *
- * Pinia store del módulo diagrams. Mantiene la lista global, el diagrama
- * actualmente abierto y delega los datos a `logica-temporal/diagrams-mock.js`.
- */
-
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import * as diagramsApi from '../logica-temporal/diagrams-mock'
+import * as diagramsApi from '../services/diagrams.service'
 
 export const useDiagramsStore = defineStore('diagrams', () => {
   const all = ref([])

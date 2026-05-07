@@ -11,14 +11,11 @@ import AuthVisualSide from './AuthVisualSide.vue'
 </script>
 
 <template>
-  <div
-    class="min-h-screen grid bg-bg"
-    style="grid-template-columns: 1fr 1.05fr;"
-  >
+  <div class="min-h-screen bg-bg grid grid-cols-1 md:grid-cols-[1fr_1.05fr]">
     <div
       class="flex flex-col bg-surface relative"
       :style="{
-        padding: '40px 56px',
+        padding: 'clamp(24px, 6vw, 56px) clamp(20px, 7vw, 56px)',
         borderRight: '1px solid var(--border)',
       }"
     >
@@ -36,6 +33,6 @@ import AuthVisualSide from './AuthVisualSide.vue'
         <span>codeatlas.dev</span>
       </div>
     </div>
-    <AuthVisualSide />
+    <AuthVisualSide class="hidden md:block" />
   </div>
 </template>

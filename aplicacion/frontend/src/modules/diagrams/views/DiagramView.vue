@@ -15,7 +15,7 @@
   diagramas. Si no se encuentra, redirige al dashboard.
 -->
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, markRaw } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
@@ -25,8 +25,8 @@ import { ArrowLeft } from 'lucide-vue-next'
 
 import { useDiagramsStore } from '../stores/diagrams.store'
 import { useProjectsStore } from '@/modules/projects/stores/projects.store'
-import { autoLayout } from '../logica-temporal/auto-layout'
-import { NODE_META } from '../logica-temporal/node-meta'
+import { autoLayout } from '../core/auto-layout'
+import { NODE_META } from '../core/node-meta'
 
 import BackendNode from '../components/nodes/BackendNode.vue'
 import FrontendNode from '../components/nodes/FrontendNode.vue'
@@ -56,36 +56,37 @@ const visible = ref({
 })
 
 const nodeTypes = {
-  backend: BackendNode,
-  frontend: FrontendNode,
-  screen: ScreenNode,
-  database: DatabaseNode,
-  flow: FlowNode,
-  rules: RulesNode,
+  backend: markRaw(BackendNode),
+  frontend: markRaw(FrontendNode),
+  screen: markRaw(ScreenNode),
+  database: markRaw(DatabaseNode),
+  flow: markRaw(FlowNode),
+  rules: markRaw(RulesNode),
 }
 
 const { fitView } = useVueFlow()
 
 // Carga el diagrama, el proyecto y construye nodes/edges al montar.
+// diagram.value se asigna al FINAL para que VueFlow (v-if="diagram") nunca
+// se renderice con nodes/edges vacíos, evitando el viewBox=NaN del MiniMap.
 onMounted(async () => {
   const id = route.params.id
-  diagram.value = await diagramsStore.fetchById(id)
-  if (!diagram.value) {
+  const d = await diagramsStore.fetchById(id)
+  if (!d) {
     router.push('/')
     return
   }
-  project.value = await projectsStore.fetchById(diagram.value.projectId)
+  project.value = await projectsStore.fetchById(d.projectId)
 
-  const built = autoLayout(diagram.value.data)
-  // Inyecta `_allScreens` en los frontends para que puedan resolver
-  // los nombres y rutas de las pantallas que contienen.
-  const allScreens = diagram.value.data.screens
+  const built = autoLayout(d.data)
+  const allScreens = d.data.model.screens
   nodes.value = built.nodes.map((n) =>
     n.type === 'frontend'
       ? { ...n, data: { ...n.data, _allScreens: allScreens } }
       : n
   )
   edges.value = built.edges
+  diagram.value = d
 })
 
 // Conjunto de ids relacionados al nodo seleccionado, para el modo foco.
@@ -113,14 +114,15 @@ const filteredNodes = computed(() =>
 
 // Edges visibles + clase rf-edge-active para los relacionados con el foco.
 const filteredEdges = computed(() =>
-  edges.value.map((e) => {
+  edges.value.flatMap((e) => {
     const src = nodes.value.find((n) => n.id === e.source)
     const tgt = nodes.value.find((n) => n.id === e.target)
-    const hidden = !src || !tgt || !visible.value[src.data.kind] || !visible.value[tgt.data.kind]
+    if (!src || !tgt) return []
+    const hidden = !visible.value[src.data.kind] || !visible.value[tgt.data.kind]
     const isActive = focusSet.value
       ? (focusSet.value.has(e.source) && focusSet.value.has(e.target))
       : false
-    return { ...e, hidden, class: isActive ? 'rf-edge-active' : '' }
+    return [{ ...e, hidden, class: isActive ? 'rf-edge-active' : '' }]
   })
 )
 
@@ -263,7 +265,7 @@ function colorFor(node) {
 
       <SidePanel
         :node="selectedNode"
-        :model="diagram?.data"
+        :model="diagram?.data?.model"
         @close="selectedId = null"
         @select="(id) => selectedId = id"
       />

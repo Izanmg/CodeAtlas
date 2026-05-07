@@ -8,7 +8,7 @@
 <script setup>
 import { ref } from 'vue'
 import { AlertCircle, ChevronDown } from 'lucide-vue-next'
-import { NODE_META, KIND_KEYS } from '../logica-temporal/node-meta'
+import { NODE_META, KIND_KEYS } from '../core/node-meta'
 
 const open = ref(false)
 </script>

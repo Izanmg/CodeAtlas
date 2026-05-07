@@ -1,11 +1,3 @@
-/**
- * time-format.js
- *
- * Formatos de tiempo en español usados en tarjetas de proyecto y diagrama.
- * "hace 5 min", "hace 3 h", "hace 2 d", o fecha completa si pasa de una
- * semana.
- */
-
 export function timeAgo(iso) {
   const d = new Date(iso)
   const now = new Date()

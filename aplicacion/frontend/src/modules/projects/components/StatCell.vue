@@ -14,14 +14,7 @@ defineProps({
 </script>
 
 <template>
-  <div
-    class="flex items-center"
-    :style="{
-      padding: '14px 18px',
-      borderRight: '1px solid var(--border-subtle)',
-      gap: '12px',
-    }"
-  >
+  <div class="stat-cell flex items-center" style="padding: 14px 18px; gap: 12px;">
     <div
       class="grid place-items-center bg-bg-muted rounded flex-shrink-0"
       :style="{ width: '32px', height: '32px', color: iconColor }"
@@ -40,3 +33,17 @@ defineProps({
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Separador horizontal entre celdas en 1 columna (móvil) */
+.stat-cell + .stat-cell {
+  border-top: 1px solid var(--border-subtle);
+}
+/* Separador vertical entre celdas en 3 columnas (sm+) */
+@media (min-width: 640px) {
+  .stat-cell + .stat-cell {
+    border-top: none;
+    border-left: 1px solid var(--border-subtle);
+  }
+}
+</style>

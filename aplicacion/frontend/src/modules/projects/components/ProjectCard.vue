@@ -8,7 +8,7 @@ import { useRouter } from 'vue-router'
 import Card from '@/components/ui/Card.vue'
 import ProjectThumb from './ProjectThumb.vue'
 import EmptyThumb from './EmptyThumb.vue'
-import { timeAgo } from '../logica-temporal/time-format'
+import { timeAgo } from '../utils/time-format'
 
 const props = defineProps({
   project: { type: Object, required: true },

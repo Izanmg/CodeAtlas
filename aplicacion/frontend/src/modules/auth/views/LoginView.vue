@@ -18,8 +18,8 @@ import { User, Lock, AlertCircle, Loader2 } from 'lucide-vue-next'
 const router = useRouter()
 const auth = useAuthStore()
 
-const email = ref('marcos@codeatlas.dev')
-const password = ref('demo-password')
+const email = ref('')
+const password = ref('')
 const loading = ref(false)
 const error = ref('')
 

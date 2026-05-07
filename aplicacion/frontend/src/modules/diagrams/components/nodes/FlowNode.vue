@@ -8,6 +8,8 @@
 import NodeShell from './NodeShell.vue'
 import NodeHandles from './NodeHandles.vue'
 
+defineOptions({ inheritAttrs: false })
+
 defineProps({
   data: { type: Object, required: true },
   selected: { type: Boolean, default: false },

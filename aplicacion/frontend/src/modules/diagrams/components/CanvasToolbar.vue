@@ -8,7 +8,7 @@
 -->
 <script setup>
 import { Maximize, LayoutDashboard, Focus } from 'lucide-vue-next'
-import { NODE_META, KIND_KEYS } from '../logica-temporal/node-meta'
+import { NODE_META, KIND_KEYS } from '../core/node-meta'
 
 const props = defineProps({
   visible: { type: Object, required: true },     // { backend: bool, ... }

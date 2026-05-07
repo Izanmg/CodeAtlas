@@ -8,7 +8,7 @@
 -->
 <script setup>
 import { computed } from 'vue'
-import { NODE_META } from '../../logica-temporal/node-meta'
+import { NODE_META } from '../../core/node-meta'
 
 const props = defineProps({
   selected: { type: Boolean, default: false },

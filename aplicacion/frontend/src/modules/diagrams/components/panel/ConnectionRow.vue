@@ -7,7 +7,7 @@
 <script setup>
 import { computed } from 'vue'
 import { ArrowRight } from 'lucide-vue-next'
-import { NODE_META } from '../../logica-temporal/node-meta'
+import { NODE_META } from '../../core/node-meta'
 
 const props = defineProps({
   c: { type: Object, required: true },           // { id, label, type, viaLabel }

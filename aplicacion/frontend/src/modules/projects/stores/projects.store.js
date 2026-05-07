@@ -1,13 +1,6 @@
-/**
- * projects.store.js
- *
- * Pinia store de proyectos. Mantiene la lista cargada en memoria y delega
- * todas las operaciones de datos a `logica-temporal/projects-mock.js`.
- */
-
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import * as projectsApi from '../logica-temporal/projects-mock'
+import * as projectsApi from '../services/projects.service'
 
 export const useProjectsStore = defineStore('projects', () => {
   const projects = ref([])

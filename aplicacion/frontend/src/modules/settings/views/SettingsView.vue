@@ -6,9 +6,8 @@
 -->
 <script setup>
 import { ref } from 'vue'
-import { useUiStore } from '@/stores/ui.store'
+import { useSettingsStore } from '../stores/settings.store'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
-import { updateProfile } from '../logica-temporal/settings-mock'
 
 import AppShell from '@/components/layout/AppShell.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
@@ -19,7 +18,7 @@ import Button from '@/components/ui/Button.vue'
 import Segmented from '@/components/ui/Segmented.vue'
 import { User, Lock, Settings as SettingsIcon, Sun, Moon, Check } from 'lucide-vue-next'
 
-const uiStore = useUiStore()
+const settingsStore = useSettingsStore()
 const authStore = useAuthStore()
 
 const activeTab = ref('profile')
@@ -34,8 +33,7 @@ const email = ref(authStore.user?.email || '')
 const saved = ref(false)
 
 async function saveProfile() {
-  const updated = await updateProfile({ name: name.value, email: email.value })
-  if (updated) authStore.user = updated
+  await authStore.updateUser({ name: name.value, email: email.value })
   saved.value = true
   setTimeout(() => (saved.value = false), 2000)
 }
@@ -43,23 +41,43 @@ async function saveProfile() {
 const currentPw = ref('')
 const newPw = ref('')
 const confirmPw = ref('')
+const pwSaved = ref(false)
+const pwError = ref('')
+
+async function savePassword() {
+  pwError.value = ''
+  try {
+    await authStore.changePassword({
+      currentPassword: currentPw.value,
+      newPassword: newPw.value,
+      confirmPassword: confirmPw.value,
+    })
+    pwSaved.value = true
+    currentPw.value = ''
+    newPw.value = ''
+    confirmPw.value = ''
+    setTimeout(() => (pwSaved.value = false), 2000)
+  } catch (e) {
+    pwError.value = e.message
+  }
+}
 </script>
 
 <template>
   <AppShell>
-    <div :style="{ padding: '32px 32px 64px', maxWidth: '1040px', margin: '0 auto' }">
+    <div class="px-4 sm:px-8 pt-6 sm:pt-8 pb-16" style="max-width: 1040px; margin: 0 auto;">
       <PageHeader
         eyebrow="cuenta"
         title="Configuración"
         description="Ajusta tu perfil, contraseña y preferencias de la herramienta."
       />
 
-      <div class="grid" :style="{ gridTemplateColumns: '180px 1fr', gap: '28px' }">
-        <nav class="flex flex-col" style="gap: 1px;">
+      <div class="flex flex-col md:grid" :style="{ gridTemplateColumns: '180px 1fr', gap: '28px' }">
+        <nav class="flex flex-row md:flex-col overflow-x-auto" style="gap: 1px;">
           <button
             v-for="t in tabs"
             :key="t.id"
-            class="flex items-center text-left rounded-sm transition-colors duration-100"
+            class="flex items-center text-left rounded-sm transition-colors duration-100 flex-shrink-0"
             :style="{
               padding: '7px 10px',
               gap: '9px',
@@ -166,11 +184,24 @@ const confirmPw = ref('')
               </Field>
             </div>
 
-            <div :style="{ marginTop: '20px' }">
+            <div class="flex items-center" :style="{ marginTop: '20px', gap: '8px' }">
               <Button
                 variant="primary"
                 :disabled="!currentPw || !newPw || newPw !== confirmPw"
+                @click="savePassword"
               >Actualizar contraseña</Button>
+              <span
+                v-if="pwSaved"
+                class="text-success inline-flex items-center"
+                :style="{ fontSize: '12.5px', gap: '4px' }"
+              >
+                <Check :size="13" /> Guardado
+              </span>
+              <span
+                v-if="pwError"
+                class="text-danger"
+                :style="{ fontSize: '12.5px' }"
+              >{{ pwError }}</span>
             </div>
           </Card>
 
@@ -199,28 +230,13 @@ const confirmPw = ref('')
                 </div>
               </div>
               <Segmented
-                :model-value="uiStore.theme"
+                :model-value="settingsStore.theme"
                 :options="[
                   { value: 'light', label: 'Claro', icon: Sun },
                   { value: 'dark', label: 'Oscuro', icon: Moon },
                 ]"
-                @update:model-value="uiStore.setTheme"
+                @update:model-value="settingsStore.setTheme"
               />
-            </div>
-
-            <div
-              class="flex justify-between items-center"
-              :style="{ padding: '14px 0', gap: '16px' }"
-            >
-              <div class="min-w-0">
-                <div class="text-fg font-semibold" style="font-size: 13px;">Atajos de teclado</div>
-                <div class="text-fg-subtle" :style="{ fontSize: '12px', marginTop: '2px' }">
-                  Cmd+K para buscar, Esc para salir de foco en un diagrama.
-                </div>
-              </div>
-              <div class="flex" style="gap: 4px;">
-                <kbd>⌘</kbd><kbd>K</kbd>
-              </div>
             </div>
           </Card>
         </div>

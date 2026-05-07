@@ -1,42 +1,42 @@
-/**
- * auth.store.js
- *
- * Pinia store de autenticación. El store no contiene lógica de red ni de
- * persistencia — eso vive en `logica-temporal/auth-mock.js`. El store solo
- * mantiene el estado en memoria y delega.
- */
-
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import * as authApi from '../logica-temporal/auth-mock'
+import * as authService from '../services/auth.service'
+import { useSettingsStore } from '@/modules/settings/stores/settings.store'
 
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref(authApi.getCurrentUser())
+  const user = ref(authService.getCurrentUser())
 
   const isAuthenticated = computed(() => !!user.value)
 
   async function login(credentials) {
-    const session = await authApi.login(credentials)
+    const session = await authService.login(credentials)
     user.value = session.user
+    await useSettingsStore().load()
     return session.user
   }
 
   async function register(payload) {
-    const session = await authApi.register(payload)
+    const session = await authService.register(payload)
     user.value = session.user
+    await useSettingsStore().load()
     return session.user
   }
 
   function logout() {
-    authApi.logout()
+    authService.logout()
+    useSettingsStore().reset()
     user.value = null
   }
 
-  function updateUser(patch) {
-    const updated = authApi.updateUser(patch)
+  async function updateUser(patch) {
+    const updated = await authService.updateUser(patch)
     if (updated) user.value = updated
     return updated
   }
 
-  return { user, isAuthenticated, login, register, logout, updateUser }
+  async function changePassword(payload) {
+    return authService.changePassword(payload)
+  }
+
+  return { user, isAuthenticated, login, register, logout, updateUser, changePassword }
 })

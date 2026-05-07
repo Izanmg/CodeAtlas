@@ -9,15 +9,15 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { X } from 'lucide-vue-next'
-import { NODE_META } from '../logica-temporal/node-meta'
-import { computeConnections } from '../logica-temporal/compute-connections'
+import { NODE_META } from '../core/node-meta'
+import { computeConnections } from '../core/compute-connections'
 import OverviewTab from './panel/OverviewTab.vue'
 import ConnectionsTab from './panel/ConnectionsTab.vue'
 import DetailsTab from './panel/DetailsTab.vue'
 
 const props = defineProps({
   node: { type: Object, default: null },
-  model: { type: Object, required: true },
+  model: { type: Object, default: null },
 })
 
 defineEmits(['close', 'select'])

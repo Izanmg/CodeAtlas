@@ -15,17 +15,17 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUiStore } from '@/stores/ui.store'
+import { useSettingsStore } from '@/modules/settings/stores/settings.store'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
 import Logo from '@/components/ui/Logo.vue'
-import { ChevronRight, Search, Sun, Moon, Settings, User, LogOut } from 'lucide-vue-next'
+import { ChevronRight, ChevronLeft, Search, Sun, Moon, Settings, User, LogOut } from 'lucide-vue-next'
 
 defineProps({
   breadcrumbs: { type: Array, default: () => [] }, // [{ label, to? }]
 })
 
 const router = useRouter()
-const uiStore = useUiStore()
+const settingsStore = useSettingsStore()
 const authStore = useAuthStore()
 
 const menuOpen = ref(false)
@@ -69,9 +69,11 @@ function logout() {
     </button>
 
     <template v-if="breadcrumbs.length > 0">
-      <div :style="{ width: '1px', height: '18px', background: 'var(--border)' }" />
+      <div :style="{ width: '1px', height: '18px', background: 'var(--border)', flexShrink: 0 }" />
+
+      <!-- Breadcrumbs completos — tablet+ -->
       <nav
-        class="flex items-center min-w-0 flex-1"
+        class="hidden sm:flex items-center min-w-0 flex-1"
         style="gap: 6px; font-size: 13px;"
       >
         <template v-for="(bc, i) in breadcrumbs" :key="i">
@@ -95,11 +97,28 @@ function logout() {
           >{{ bc.label }}</span>
         </template>
       </nav>
+
+      <!-- Breadcrumb móvil: flecha atrás + página actual -->
+      <nav class="flex sm:hidden items-center min-w-0 flex-1" style="gap: 2px; font-size: 13px;">
+        <button
+          v-if="breadcrumbs.find(b => b.to)"
+          class="text-fg-muted hover:text-fg grid place-items-center flex-shrink-0 rounded transition-colors duration-100"
+          style="width: 28px; height: 28px;"
+          @click="router.push(breadcrumbs.find(b => b.to).to)"
+        >
+          <ChevronLeft :size="15" />
+        </button>
+        <span
+          class="text-fg font-medium overflow-hidden text-ellipsis whitespace-nowrap"
+          style="font-size: 13px; padding: 3px 4px;"
+        >{{ breadcrumbs[breadcrumbs.length - 1]?.label }}</span>
+      </nav>
     </template>
 
     <div class="ml-auto flex items-center" style="gap: 8px;">
+      <!-- Buscador completo — solo en pantallas medianas+ -->
       <button
-        class="focus-ring inline-flex items-center bg-bg-subtle text-fg-subtle rounded-md transition-colors duration-100"
+        class="focus-ring hidden md:inline-flex items-center bg-bg-subtle text-fg-subtle rounded-md transition-colors duration-100"
         :style="{
           padding: '0 8px 0 10px',
           height: '30px',
@@ -113,19 +132,27 @@ function logout() {
         <span class="flex-1 text-left">Buscar bloques, diagramas…</span>
         <kbd>⌘K</kbd>
       </button>
+      <!-- Icono de búsqueda — solo en móvil -->
+      <button
+        class="focus-ring md:hidden grid place-items-center rounded-md text-fg-muted hover:bg-bg-muted hover:text-fg transition-colors duration-100"
+        :style="{ width: '30px', height: '30px', border: '1px solid var(--border)' }"
+        title="Buscar"
+      >
+        <Search :size="15" />
+      </button>
 
       <button
         class="focus-ring grid place-items-center rounded-md text-fg-muted hover:bg-bg-muted hover:text-fg transition-colors duration-100"
         :style="{ width: '30px', height: '30px' }"
         title="Cambiar tema"
-        @click="uiStore.toggleTheme()"
+        @click="settingsStore.toggleTheme()"
       >
-        <Sun v-if="uiStore.theme === 'dark'" :size="15" />
+        <Sun v-if="settingsStore.theme === 'dark'" :size="15" />
         <Moon v-else :size="15" />
       </button>
 
       <button
-        class="focus-ring grid place-items-center rounded-md text-fg-muted hover:bg-bg-muted hover:text-fg transition-colors duration-100"
+        class="focus-ring hidden sm:grid place-items-center rounded-md text-fg-muted hover:bg-bg-muted hover:text-fg transition-colors duration-100"
         :style="{ width: '30px', height: '30px' }"
         title="Configuración"
         @click="goSettings"

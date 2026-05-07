@@ -29,9 +29,9 @@ import Textarea from '@/components/ui/Textarea.vue'
 import StatCell from '@/modules/projects/components/StatCell.vue'
 import SectionLabel from '@/modules/projects/components/SectionLabel.vue'
 import ProjectCard from '@/modules/projects/components/ProjectCard.vue'
-import { timeAgo } from '@/modules/projects/logica-temporal/time-format'
+import { timeAgo } from '@/modules/projects/utils/time-format'
 
-import { Plus, Search, Folder, Network, AlertCircle, Check, ArrowRight } from 'lucide-vue-next'
+import { Plus, Search, Folder, Network, AlertCircle, ArrowRight } from 'lucide-vue-next'
 
 const router = useRouter()
 const projectsStore = useProjectsStore()
@@ -94,14 +94,14 @@ function openDiagram(d) {
 
 <template>
   <AppShell>
-    <div :style="{ padding: '32px 32px 64px', maxWidth: '1240px', margin: '0 auto' }">
+    <div class="px-4 sm:px-8 pt-6 sm:pt-8 pb-16" style="max-width: 1240px; margin: 0 auto;">
       <PageHeader
         :eyebrow="`hola, ${firstName.toLowerCase()}`"
         title="Tus proyectos"
         description="Cada proyecto agrupa los diagramas generados a partir de tu documentación markdown."
       >
         <template #actions>
-          <div :style="{ width: '220px' }">
+          <div class="w-full sm:w-[220px]">
             <Input v-model="filter" placeholder="Filtrar proyectos…">
               <template #icon><Search :size="14" /></template>
             </Input>
@@ -115,13 +115,8 @@ function openDiagram(d) {
 
       <!-- Strip de stats -->
       <div
-        class="bg-surface rounded-lg overflow-hidden"
-        :style="{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          border: '1px solid var(--border)',
-          marginBottom: '28px',
-        }"
+        class="bg-surface rounded-lg overflow-hidden grid grid-cols-1 sm:grid-cols-3"
+        :style="{ border: '1px solid var(--border)', marginBottom: '28px' }"
       >
         <StatCell
           label="Proyectos"
@@ -132,7 +127,7 @@ function openDiagram(d) {
         </StatCell>
         <StatCell
           label="Diagramas"
-          :value="diagramsStore.all.length"
+          :value="projectsStore.projects.reduce((s, p) => s + (p.diagramCount || 0), 0)"
           icon-color="var(--kind-backend)"
         >
           <template #icon><Network :size="15" /></template>
@@ -144,24 +139,11 @@ function openDiagram(d) {
         >
           <template #icon><AlertCircle :size="15" /></template>
         </StatCell>
-        <StatCell
-          label="Plan"
-          value="Pro"
-          icon-color="var(--success)"
-        >
-          <template #icon><Check :size="15" /></template>
-        </StatCell>
       </div>
 
       <template v-if="pinned.length > 0">
         <SectionLabel :count="pinned.length">Fijados</SectionLabel>
-        <div
-          class="grid"
-          :style="{
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: '14px',
-          }"
-        >
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" style="gap: 14px;">
           <ProjectCard
             v-for="p in pinned"
             :key="p.id"
@@ -175,13 +157,7 @@ function openDiagram(d) {
           :count="rest.length"
           :style="{ marginTop: pinned.length ? '28px' : '0' }"
         >Todos los proyectos</SectionLabel>
-        <div
-          class="grid"
-          :style="{
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: '14px',
-          }"
-        >
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" style="gap: 14px;">
           <ProjectCard
             v-for="p in rest"
             :key="p.id"

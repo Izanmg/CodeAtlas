@@ -32,6 +32,7 @@ const state = ref('idle')          // idle | loading
 const progress = ref(0)
 const phaseLabel = ref('')
 const inputRef = ref(null)
+const folderInputRef = ref(null)
 
 function handleFiles(fileList) {
   const arr = Array.from(fileList).filter(
@@ -41,14 +42,47 @@ function handleFiles(fileList) {
     id: f.name + Math.random(),
     name: f.name,
     size: f.size,
+    file: f,
   }))
   files.value = [...files.value, ...mapped]
 }
 
-function onDrop(e) {
+async function processEntry(entry) {
+  if (entry.isFile) {
+    return new Promise((resolve) => entry.file((f) => resolve([f])))
+  }
+  if (entry.isDirectory) {
+    return new Promise((resolve) => {
+      const reader = entry.createReader()
+      const collected = []
+      function readAll() {
+        reader.readEntries(async (entries) => {
+          if (!entries.length) {
+            const nested = await Promise.all(collected.map(processEntry))
+            resolve(nested.flat())
+          } else {
+            collected.push(...entries)
+            readAll()
+          }
+        })
+      }
+      readAll()
+    })
+  }
+  return []
+}
+
+async function onDrop(e) {
   e.preventDefault()
   dragActive.value = false
-  handleFiles(e.dataTransfer.files)
+  const items = e.dataTransfer.items
+  if (items?.length) {
+    const entries = Array.from(items).map((i) => i.webkitGetAsEntry()).filter(Boolean)
+    const allFiles = (await Promise.all(entries.map(processEntry))).flat()
+    handleFiles(allFiles)
+  } else {
+    handleFiles(e.dataTransfer.files)
+  }
 }
 
 function onSelectFiles(e) {
@@ -97,7 +131,7 @@ const breadcrumbs = ref([
 
 <template>
   <AppShell :breadcrumbs="breadcrumbs">
-    <div :style="{ padding: '32px 32px 64px', maxWidth: '760px', margin: '0 auto' }">
+    <div class="px-4 sm:px-8 pt-6 sm:pt-8 pb-16" style="max-width: 760px; margin: 0 auto;">
       <PageHeader
         eyebrow="generar diagrama"
         title="Sube tu documentación"
@@ -144,7 +178,7 @@ const breadcrumbs = ref([
       <!-- Formulario -->
       <div v-else class="flex flex-col" style="gap: 16px;">
         <div
-          class="rounded-lg text-center cursor-pointer transition-colors duration-100"
+          class="rounded-lg text-center transition-colors duration-100"
           :style="{
             padding: '44px 24px',
             border: `1.5px dashed ${dragActive ? 'var(--accent)' : 'var(--border-strong)'}`,
@@ -154,7 +188,6 @@ const breadcrumbs = ref([
           @dragleave.prevent="dragActive = false"
           @dragover.prevent
           @drop="onDrop"
-          @click="inputRef?.click()"
         >
           <div
             class="grid place-items-center mx-auto rounded-md"
@@ -172,18 +205,32 @@ const breadcrumbs = ref([
           <div
             class="text-fg font-semibold"
             :style="{ fontSize: '14px', letterSpacing: '-0.01em' }"
-          >Arrastra tus archivos .md aquí</div>
+          >Arrastra archivos o carpetas .md aquí</div>
           <div class="text-fg-subtle" :style="{ margin: '4px 0 14px', fontSize: '12.5px' }">
-            o haz clic para seleccionarlos · acepta varios archivos
+            o selecciónalos con los botones · acepta varios archivos y carpetas
           </div>
-          <Button variant="secondary" size="sm">
-            <template #icon><Folder :size="13" /></template>
-            Seleccionar archivos
-          </Button>
+          <div class="flex" style="gap: 8px; justify-content: center;">
+            <Button variant="secondary" size="sm" @click.stop="inputRef?.click()">
+              <template #icon><FileText :size="13" /></template>
+              Archivos
+            </Button>
+            <Button variant="secondary" size="sm" @click.stop="folderInputRef?.click()">
+              <template #icon><Folder :size="13" /></template>
+              Carpeta
+            </Button>
+          </div>
           <input
             ref="inputRef"
             type="file"
             accept=".md,.markdown"
+            multiple
+            style="display: none;"
+            @change="onSelectFiles"
+          />
+          <input
+            ref="folderInputRef"
+            type="file"
+            webkitdirectory
             multiple
             style="display: none;"
             @change="onSelectFiles"
@@ -244,11 +291,12 @@ const breadcrumbs = ref([
         </Field>
 
         <div
-          class="flex justify-between items-center"
+          class="flex flex-col sm:flex-row justify-between items-start sm:items-center"
           :style="{
             paddingTop: '8px',
             borderTop: '1px solid var(--border-subtle)',
             marginTop: '8px',
+            gap: '12px',
           }"
         >
           <button
