@@ -1,0 +1,129 @@
+/* =========================================================================
+   tokens.css
+
+   Tokens de diseño del sistema CodeAtlas — colores, tipografía, radios y
+   sombras. Estas variables son el equivalente exacto al `tokens.css` del
+   handoff de Claude Design.
+
+   Cada token se expone como variable CSS bajo `:root` (modo claro) y
+   `[data-theme="dark"]` (modo oscuro). Tailwind las consume desde
+   `tailwind.config.js` para que las clases utilitarias respeten el tema
+   activo automáticamente.
+   ========================================================================= */
+
+:root {
+  /* Marca */
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --accent-soft: #f3efff;
+  --accent-ring: rgba(124, 58, 237, 0.20);
+  --accent-fg: #ffffff;
+
+  /* Superficies (claro) */
+  --bg: #ffffff;
+  --bg-subtle: #fafafa;
+  --bg-muted: #f4f4f5;
+  --bg-canvas: #fbfbfc;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-overlay: #ffffff;
+
+  /* Bordes */
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --border-subtle: #f0f0f1;
+
+  /* Texto */
+  --fg: #09090b;
+  --fg-muted: #52525b;
+  --fg-subtle: #71717a;
+  --fg-faint: #a1a1aa;
+  --fg-inverse: #fafafa;
+
+  /* Semánticos */
+  --success: #16a34a;
+  --success-bg: #f0fdf4;
+  --warning: #d97706;
+  --warning-bg: #fffbeb;
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+  --info: #2563eb;
+  --info-bg: #eff6ff;
+
+  /* Tipos de bloque del diagrama */
+  --kind-backend: #2563eb;
+  --kind-backend-bg: #eff6ff;
+  --kind-frontend: #16a34a;
+  --kind-frontend-bg: #f0fdf4;
+  --kind-screen: #ea580c;
+  --kind-screen-bg: #fff7ed;
+  --kind-database: #9333ea;
+  --kind-database-bg: #faf5ff;
+  --kind-flow: #ca8a04;
+  --kind-flow-bg: #fefce8;
+  --kind-rules: #475569;
+  --kind-rules-bg: #f8fafc;
+
+  /* Sombras */
+  --shadow-xs: 0 1px 0 rgba(9, 9, 11, 0.04);
+  --shadow-sm: 0 1px 2px rgba(9, 9, 11, 0.05), 0 0 0 1px rgba(9, 9, 11, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(9, 9, 11, 0.06), 0 2px 4px -2px rgba(9, 9, 11, 0.05);
+  --shadow-lg: 0 10px 24px -6px rgba(9, 9, 11, 0.10), 0 0 0 1px rgba(9, 9, 11, 0.05);
+  --shadow-xl: 0 20px 40px -12px rgba(9, 9, 11, 0.18), 0 0 0 1px rgba(9, 9, 11, 0.06);
+  --shadow-focus: 0 0 0 3px var(--accent-ring);
+  --shadow-inset: inset 0 1px 2px rgba(9, 9, 11, 0.04);
+}
+
+[data-theme="dark"] {
+  --accent: #a78bfa;
+  --accent-hover: #8b5cf6;
+  --accent-soft: #1e1b2e;
+  --accent-ring: rgba(167, 139, 250, 0.25);
+  --accent-fg: #0a0a0c;
+
+  --bg: #09090b;
+  --bg-subtle: #0c0c0f;
+  --bg-muted: #131317;
+  --bg-canvas: #0a0a0c;
+  --surface: #131317;
+  --surface-raised: #18181c;
+  --surface-overlay: #1c1c22;
+
+  --border: #26262c;
+  --border-strong: #34343c;
+  --border-subtle: #1c1c22;
+
+  --fg: #fafafa;
+  --fg-muted: #a1a1aa;
+  --fg-subtle: #71717a;
+  --fg-faint: #52525b;
+  --fg-inverse: #09090b;
+
+  --success: #22c55e;
+  --success-bg: #052e16;
+  --warning: #fbbf24;
+  --warning-bg: #1f1608;
+  --danger: #f87171;
+  --danger-bg: #2d1010;
+  --info: #60a5fa;
+  --info-bg: #0a1628;
+
+  --kind-backend: #60a5fa;
+  --kind-backend-bg: #0e1a2e;
+  --kind-frontend: #4ade80;
+  --kind-frontend-bg: #0a1f12;
+  --kind-screen: #fb923c;
+  --kind-screen-bg: #2a160a;
+  --kind-database: #c084fc;
+  --kind-database-bg: #1e1228;
+  --kind-flow: #fcd34d;
+  --kind-flow-bg: #261d08;
+  --kind-rules: #94a3b8;
+  --kind-rules-bg: #15181d;
+
+  --shadow-xs: 0 1px 0 rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 24px -6px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --shadow-xl: 0 20px 40px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.06);
+}

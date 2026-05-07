@@ -1,0 +1,140 @@
+/* =========================================================================
+   main.css
+
+   Hoja de estilos global de la aplicación. Compone tres capas:
+
+     1. tokens.css      → variables de tema (colores, sombras, etc.)
+     2. Tailwind base   → reset y utilidades de Tailwind
+     3. Estilos base    → resets puntuales propios + utilidades sueltas
+        (scrollbar, kbd, .mono, .dot-canvas, focus rings y los hooks que
+        usa Vue Flow para el modo foco)
+   ========================================================================= */
+
+@import './tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body, #app { height: 100%; margin: 0; }
+
+  body {
+    font-family: theme('fontFamily.sans');
+    font-feature-settings: "cv11", "ss01", "ss03";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: var(--bg);
+    color: var(--fg);
+    font-size: 13px;
+    line-height: 1.5;
+    letter-spacing: -0.005em;
+  }
+
+  button { font-family: inherit; cursor: pointer; }
+  input, textarea, select { font-family: inherit; font-size: inherit; color: inherit; }
+
+  ::selection { background: var(--accent); color: var(--accent-fg); }
+}
+
+@layer utilities {
+  .tnum { font-variant-numeric: tabular-nums; }
+  .mono { font-family: theme('fontFamily.mono'); }
+
+  /* Fondo de puntos para previews y zonas decorativas. */
+  .dot-canvas {
+    background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+
+  /* Anillo de foco accesible para botones e inputs. */
+  .focus-ring:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+}
+
+/* Scrollbars (matchea el handoff). */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 6px;
+  border: 2px solid var(--bg);
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--fg-faint); }
+
+/* Tecla representada (atajos teclado). */
+kbd {
+  font-family: theme('fontFamily.mono');
+  font-size: 11px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  color: var(--fg-muted);
+  line-height: 1;
+}
+
+/* =========================================================================
+   Vue Flow — overrides de tema
+   ========================================================================= */
+
+.vue-flow__edge-path {
+  stroke: var(--border-strong);
+  stroke-width: 1.5;
+}
+.vue-flow__edge.selected .vue-flow__edge-path,
+.vue-flow__edge:hover .vue-flow__edge-path {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.vue-flow__handle {
+  width: 7px;
+  height: 7px;
+  background: var(--bg);
+  border: 1.5px solid var(--border-strong);
+}
+.vue-flow__controls {
+  box-shadow: var(--shadow-md);
+  border-radius: var(--r-md, 6px);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.vue-flow__controls-button {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-muted);
+}
+.vue-flow__controls-button:hover {
+  background: var(--bg-muted);
+  color: var(--fg);
+}
+.vue-flow__minimap {
+  background: var(--surface) !important;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: var(--shadow-sm);
+}
+.vue-flow__attribution { display: none; }
+
+/* Modo foco — atenúa todo lo que no esté marcado como activo. */
+.rf-dim .vue-flow__node:not(.rf-active),
+.rf-dim .vue-flow__edge:not(.rf-edge-active) {
+  opacity: 0.18;
+  transition: opacity 180ms;
+}
+.rf-dim .vue-flow__node.rf-active,
+.rf-dim .vue-flow__edge.rf-edge-active { opacity: 1; }
+.vue-flow__node, .vue-flow__edge { transition: opacity 180ms; }
+
+/* Animaciones reutilizables. */
+@keyframes ca-spin { to { transform: rotate(360deg); } }
+@keyframes ca-fade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes ca-scale-in { from { opacity: 0; transform: scale(0.97) translateY(4px) } to { opacity: 1; transform: scale(1) translateY(0) } }
+@keyframes ca-slide-in-r { from { transform: translateX(16px); opacity: 0 } to { transform: translateX(0); opacity: 1 } }
+@keyframes ca-slide-in-bottom { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
+
+.animate-spin-loader { animation: ca-spin 0.9s linear infinite; }
