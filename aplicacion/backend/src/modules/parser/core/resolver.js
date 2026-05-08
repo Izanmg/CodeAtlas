@@ -27,8 +27,32 @@ export function resolveReferences(model) {
   checkScreens(model, index)
   checkFlows(model, index)
   checkDatabase(model, index)
+  checkFileImports(model)
 
   return model
+}
+
+/**
+ * Para cada módulo, comprueba que `file.imports` solo apunte a IDs de
+ * archivos definidos en el mismo módulo. Las dependencias entre módulos
+ * deben declararse en `module.depends-on`, no en imports a nivel de archivo.
+ */
+function checkFileImports(model) {
+  const allModules = [...model.modules.backend, ...model.modules.frontend]
+  for (const m of allModules) {
+    const localFileIds = new Set((m.files ?? []).map((f) => f.id))
+    for (const f of (m.files ?? [])) {
+      for (const target of (f.imports ?? [])) {
+        if (!localFileIds.has(target)) {
+          warn(
+            `archivo "${f.id}" del módulo "${m.id}" (imports)`,
+            target,
+            'files del mismo módulo'
+          )
+        }
+      }
+    }
+  }
 }
 
 /**

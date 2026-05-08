@@ -21,14 +21,17 @@ files:
     folder: parser-root
     path: parser.routes.js
     type: router
+    imports: [parser-controller]
   - id: parser-controller
     folder: parser-root
     path: parser.controller.js
     type: controller
+    imports: [parser-service]
   - id: parser-service
     folder: parser-root
     path: parser.service.js
     type: service
+    imports: [markdown-source, yaml-parser, validator, model-builder, resolver, layout-calculator, parser-repository]
   - id: parser-repository
     folder: parser-root
     path: parser.repository.js
@@ -45,6 +48,7 @@ files:
     folder: parser-core
     path: validator.js
     type: core
+    imports: [frontmatter-config]
   - id: frontmatter-config
     folder: parser-core
     path: frontmatter.config.js
@@ -57,6 +61,7 @@ files:
     folder: parser-core
     path: model-builder.js
     type: core
+    imports: [sections-config]
   - id: resolver
     folder: parser-core
     path: resolver.js

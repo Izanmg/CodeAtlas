@@ -20,14 +20,17 @@ files:
     folder: projects-root
     path: projects.routes.js
     type: router
+    imports: [projects-controller]
   - id: projects-controller
     folder: projects-root
     path: projects.controller.js
     type: controller
+    imports: [projects-service]
   - id: projects-service
     folder: projects-root
     path: projects.service.js
     type: service
+    imports: [projects-repository]
   - id: projects-repository
     folder: projects-root
     path: projects.repository.js

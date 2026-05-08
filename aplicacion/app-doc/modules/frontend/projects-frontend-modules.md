@@ -23,22 +23,59 @@ files:
     folder: views
     path: ProjectDetailView.vue
     type: view
+    imports: [projects-store, stat-cell, section-label, empty-state, diagram-card, time-format]
   - id: project-card
     folder: components
     path: ProjectCard.vue
     type: component
+    imports: [projects-store, project-thumb, empty-thumb, confirm-delete-modal, project-edit-modal, time-format]
   - id: diagram-card
     folder: components
     path: DiagramCard.vue
     type: component
+    imports: [diagram-thumb, confirm-delete-modal, diagram-edit-modal, time-format]
   - id: confirm-delete-modal
     folder: components
     path: ConfirmDeleteModal.vue
+    type: component
+  - id: project-edit-modal
+    folder: components
+    path: ProjectEditModal.vue
+    type: component
+    imports: [projects-store]
+  - id: diagram-edit-modal
+    folder: components
+    path: DiagramEditModal.vue
+    type: component
+  - id: project-thumb
+    folder: components
+    path: ProjectThumb.vue
+    type: component
+  - id: diagram-thumb
+    folder: components
+    path: DiagramThumb.vue
+    type: component
+  - id: empty-thumb
+    folder: components
+    path: EmptyThumb.vue
+    type: component
+  - id: empty-state
+    folder: components
+    path: EmptyState.vue
+    type: component
+  - id: section-label
+    folder: components
+    path: SectionLabel.vue
+    type: component
+  - id: stat-cell
+    folder: components
+    path: StatCell.vue
     type: component
   - id: projects-store
     folder: stores
     path: projects.store.js
     type: store
+    imports: [projects-frontend-service]
   - id: projects-frontend-service
     folder: services
     path: projects.service.js
@@ -73,11 +110,25 @@ Gestiona la vista de detalle del proyecto con sus diagramas y el CRUD de proyect
 - onClick: navega al diagrama
 - onDelete: emite el evento de borrado (con confirmación)
 
+### project-edit-modal
+- close()
+- save()
+
+### diagram-edit-modal
+- addFiles(fileList)
+- onSelectFiles(e)
+- onDrop(e)
+- removeFile(id)
+- formatSize(bytes)
+- close()
+- save()
+
 ### projects-store
 - fetchAll(force)
 - fetchById(id)
 - create(payload)
 - bumpDiagramCount(projectId, delta)
+- update(id, patch)
 - remove(id)
 
 ### projects-frontend-service

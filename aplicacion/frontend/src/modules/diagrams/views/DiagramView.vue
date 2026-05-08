@@ -531,6 +531,14 @@ function toggleFilter(k) {
 }
 
 function onNodeClick({ node }) { selectedId.value = node.id }
+function onNodeDoubleClick({ node }) {
+  // Doble-click en un módulo abre la vista detallada del módulo. Solo
+  // tienen vista interna los módulos backend y frontend (los que llevan
+  // folders/files/functions).
+  if (node?.data?.kind !== 'backend' && node?.data?.kind !== 'frontend') return
+  const moduleId = node.id.replace(/^mod-/, '')
+  router.push(`/diagrams/${diagram.value.id}/modules/${moduleId}`)
+}
 function onPaneClick()         { selectedId.value = null }
 function clearFocus() {
   selectedId.value = null
@@ -723,6 +731,7 @@ function goBack() {
       <CanvasRules
         v-if="diagram && mode === 'relations'"
         :rules="rulesData"
+        :overview="diagram.data?.model?.overview || ''"
       />
 
       <!-- Modo Flujos: panel de pasos del flujo activo a la izquierda,
@@ -752,6 +761,7 @@ function goBack() {
         fit-view-on-init
         :fit-view-params="{ padding: 0.14, maxZoom: 0.9, minZoom: 0.2 }"
         @node-click="onNodeClick"
+        @node-double-click="onNodeDoubleClick"
         @pane-click="onPaneClick"
         @nodes-change="handleNodesChange"
         style="width: 100%; height: 100%;"

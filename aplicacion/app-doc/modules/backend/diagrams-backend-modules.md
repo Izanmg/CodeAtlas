@@ -10,6 +10,7 @@ api:
   - GET /api/projects/:projectId/diagrams
   - POST /api/projects/:projectId/diagrams
   - GET /api/diagrams/:id
+  - PATCH /api/diagrams/:id
   - PATCH /api/diagrams/:id/layout
   - DELETE /api/diagrams/:id
 depends-on: [auth-backend, projects-backend, parser-backend]
@@ -21,14 +22,17 @@ files:
     folder: diagrams-root
     path: diagrams.routes.js
     type: router
+    imports: [diagrams-controller]
   - id: diagrams-controller
     folder: diagrams-root
     path: diagrams.controller.js
     type: controller
+    imports: [diagrams-service, diagrams-repository]
   - id: diagrams-service
     folder: diagrams-root
     path: diagrams.service.js
     type: service
+    imports: [diagrams-repository]
   - id: diagrams-repository
     folder: diagrams-root
     path: diagrams.repository.js
@@ -43,13 +47,14 @@ Es el módulo central de la aplicación. Recibe los archivos `.md` en multipart,
 ### diagrams-routes
 - monta GET /diagrams/recent (con requireAuth)
 - monta GET y POST /projects/:projectId/diagrams (con requireAuth y multer en POST)
-- monta GET, PATCH /:id/layout, DELETE /:id sobre /diagrams/:id (con requireAuth)
+- monta GET, PATCH /:id (con multer), PATCH /:id/layout, DELETE /:id sobre /diagrams/:id (con requireAuth)
 
 ### diagrams-controller
 - getRecent(req, res)
 - getByProject(req, res)
 - getById(req, res)
 - generate(req, res)
+- update(req, res)
 - saveLayout(req, res)
 - remove(req, res)
 
@@ -57,6 +62,7 @@ Es el módulo central de la aplicación. Recibe los archivos `.md` en multipart,
 - getByProject(projectId, userId)
 - getById(id, userId)
 - generate(projectId, userId, { name, files })
+- update(id, userId, { name, files })
 - saveLayout(id, userId, layout)
 - remove(id, userId)
 
@@ -65,6 +71,7 @@ Es el módulo central de la aplicación. Recibe los archivos `.md` en multipart,
 - findByProject(projectId, userId)
 - findById(id, userId)
 - create({ projectId, userId, name, description, model, layout })
+- update(id, userId, { name, description, model, layout })
 - updateLayout(id, userId, layout)
 - remove(id, userId)
 

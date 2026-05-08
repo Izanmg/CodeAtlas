@@ -20,14 +20,17 @@ files:
     folder: auth-root
     path: auth.routes.js
     type: router
+    imports: [auth-controller, auth-middleware]
   - id: auth-controller
     folder: auth-root
     path: auth.controller.js
     type: controller
+    imports: [auth-service]
   - id: auth-service
     folder: auth-root
     path: auth.service.js
     type: service
+    imports: [auth-repository]
   - id: auth-repository
     folder: auth-root
     path: auth.repository.js
@@ -36,6 +39,7 @@ files:
     folder: auth-root
     path: auth.middleware.js
     type: middleware
+    imports: [auth-service]
 ---
 
 ## Purpose

@@ -27,7 +27,9 @@ export function buildModel(parsedFiles) {
     screens: [],
     flows: [],
     database: [],
-    systemRules: {}
+    systemRules: {},
+    overview: null,
+    fileTypes: {}
   }
 
   for (const { yaml, sections } of parsedFiles) {
@@ -45,8 +47,13 @@ export function buildModel(parsedFiles) {
 function dispatch(model, yaml, knownSections, extensions) {
   switch (yaml.type) {
     case 'modules-index':
-      // El archivo índice no aporta nada al modelo. Solo existe para que el
-      // validator pueda confirmar que el proyecto declara sus file-types.
+      // Conservamos el Overview y el vocabulario de file-types para que el
+      // frontend pueda renderizarlos. Si hay varios índices, solo el primero
+      // gana (no debería haber más de uno por proyecto).
+      if (!model.overview) {
+        model.overview = knownSections['overview'] ?? null
+        model.fileTypes = yaml['file-types'] ?? {}
+      }
       break
 
     case 'module': {

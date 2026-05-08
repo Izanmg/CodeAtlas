@@ -17,7 +17,6 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSettingsStore } from '@/modules/settings/stores/settings.store'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
-import Logo from '@/components/ui/Logo.vue'
 import { ChevronRight, ChevronLeft, Search, Sun, Moon, Settings, User, LogOut } from 'lucide-vue-next'
 
 defineProps({
@@ -64,8 +63,16 @@ function logout() {
       gap: '12px',
     }"
   >
-    <button class="flex items-center" style="padding: 0;" @click="goHome">
-      <Logo :size="22" />
+    <button
+      class="inline-flex items-center"
+      style="padding: 0; gap: 9px;"
+      @click="goHome"
+    >
+      <img src="/logo.svg" alt="CodeAtlas" :style="{ width: '24px', height: '24px' }" />
+      <span
+        class="font-semibold text-fg"
+        style="font-size: 15px; letter-spacing: -0.02em;"
+      >CodeAtlas</span>
     </button>
 
     <template v-if="breadcrumbs.length > 0">

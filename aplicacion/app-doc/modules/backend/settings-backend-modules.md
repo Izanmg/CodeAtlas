@@ -17,14 +17,17 @@ files:
     folder: settings-root
     path: settings.routes.js
     type: router
+    imports: [settings-controller]
   - id: settings-controller
     folder: settings-root
     path: settings.controller.js
     type: controller
+    imports: [settings-service]
   - id: settings-service
     folder: settings-root
     path: settings.service.js
     type: service
+    imports: [settings-repository]
   - id: settings-repository
     folder: settings-root
     path: settings.repository.js

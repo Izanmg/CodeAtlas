@@ -56,6 +56,12 @@ const routes = [
     component: () => import('@/modules/diagrams/views/DiagramView.vue'),
     meta: { requiresAuth: true },
   },
+  {
+    path: '/diagrams/:id/modules/:moduleId',
+    name: 'module-deep-dive',
+    component: () => import('@/modules/diagrams/views/ModuleDeepDiveView.vue'),
+    meta: { requiresAuth: true },
+  },
 
   // Configuración
   {

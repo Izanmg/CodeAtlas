@@ -27,18 +27,27 @@ files:
     folder: views
     path: DiagramNewView.vue
     type: view
+    imports: [diagrams-store]
   - id: diagram-view
     folder: views
     path: DiagramView.vue
     type: view
+    imports: [diagrams-store, auto-layout, node-meta, backend-node, frontend-node, screen-node, database-node, rules-node, floating-edge, canvas-toolbar, canvas-legend, canvas-rules, canvas-flow-selector, canvas-flow-panel, side-panel]
+  - id: module-deep-dive-view
+    folder: views
+    path: ModuleDeepDiveView.vue
+    type: view
+    imports: [diagrams-store, auto-layout-deep, file-node, folder-node, frontier-node, floating-edge, canvas-flow-selector, canvas-flow-panel]
   - id: canvas-toolbar
     folder: components
     path: CanvasToolbar.vue
     type: component
+    imports: [node-meta]
   - id: canvas-legend
     folder: components
     path: CanvasLegend.vue
     type: component
+    imports: [node-meta]
   - id: canvas-rules
     folder: components
     path: CanvasRules.vue
@@ -55,30 +64,41 @@ files:
     folder: components
     path: SidePanel.vue
     type: component
+    imports: [node-meta, compute-connections, overview-tab, connections-tab, details-tab]
+  - id: floating-edge
+    folder: components
+    path: FloatingEdge.vue
+    type: component
   - id: backend-node
     folder: nodes
     path: BackendNode.vue
     type: component
+    imports: [node-shell, node-handles, node-flow-chips]
   - id: frontend-node
     folder: nodes
     path: FrontendNode.vue
     type: component
+    imports: [node-shell, node-handles, node-flow-chips]
   - id: screen-node
     folder: nodes
     path: ScreenNode.vue
     type: component
+    imports: [node-shell, node-handles, node-flow-chips]
   - id: database-node
     folder: nodes
     path: DatabaseNode.vue
     type: component
+    imports: [node-shell, node-handles, node-flow-chips]
   - id: rules-node
     folder: nodes
     path: RulesNode.vue
     type: component
+    imports: [node-shell, node-handles]
   - id: node-shell
     folder: nodes
     path: NodeShell.vue
     type: component
+    imports: [node-meta]
   - id: node-handles
     folder: nodes
     path: NodeHandles.vue
@@ -87,22 +107,53 @@ files:
     folder: nodes
     path: NodeFlowChips.vue
     type: component
+  - id: file-node
+    folder: nodes
+    path: FileNode.vue
+    type: component
+    imports: [node-handles]
+  - id: folder-node
+    folder: nodes
+    path: FolderNode.vue
+    type: component
+  - id: frontier-node
+    folder: nodes
+    path: FrontierNode.vue
+    type: component
+    imports: [node-handles]
   - id: details-tab
     folder: panel
     path: DetailsTab.vue
     type: component
+    imports: [panel-section-header]
   - id: connections-tab
     folder: panel
     path: ConnectionsTab.vue
     type: component
+    imports: [panel-section-header, connection-row]
   - id: overview-tab
     folder: panel
     path: OverviewTab.vue
     type: component
+    imports: [stat-tile, panel-section-header, connection-row]
+  - id: panel-section-header
+    folder: panel
+    path: PanelSectionHeader.vue
+    type: component
+  - id: stat-tile
+    folder: panel
+    path: StatTile.vue
+    type: component
+  - id: connection-row
+    folder: panel
+    path: ConnectionRow.vue
+    type: component
+    imports: [node-meta]
   - id: diagrams-store
     folder: stores
     path: diagrams.store.js
     type: store
+    imports: [diagrams-frontend-service]
   - id: diagrams-frontend-service
     folder: services
     path: diagrams.service.js
@@ -110,6 +161,10 @@ files:
   - id: auto-layout
     folder: core
     path: auto-layout.js
+    type: helper
+  - id: auto-layout-deep
+    folder: core
+    path: auto-layout-deep.js
     type: helper
   - id: compute-connections
     folder: core
@@ -143,6 +198,15 @@ Es el módulo más grande del frontend. Cubre dos vistas distintas: la de genera
 - undo() / redo()
 - setMode(next) / handlePickFlow({ flowId })
 - onNodeClick / onPaneClick / clearFocus
+- onNodeDoubleClick({ node }) — navega al deep-dive del módulo
+- onSearchChange(value) / onNodeSelected(id)
+- toggleFilter(k) / toggleIndirect()
+
+### module-deep-dive-view
+- onMounted: carga diagrama, busca el módulo, construye nodos/edges del deep-dive
+- setMode(next)
+- goBack()
+- onKeydown(e) — Esc vuelve al diagrama principal
 
 ### canvas-toolbar
 - emite 'mode' al cambiar entre Relaciones y Flujos
@@ -163,6 +227,7 @@ Es el módulo más grande del frontend. Cubre dos vistas distintas: la de genera
 - fetchByProject(projectId)
 - fetchById(id)
 - generate(payload, onProgress)
+- update(id, payload, onProgress)
 - saveLayout(id, layout)
 - remove(id)
 
@@ -171,11 +236,23 @@ Es el módulo más grande del frontend. Cubre dos vistas distintas: la de genera
 - fetchByProject(projectId)
 - fetchById(id)
 - generate({ projectId, name, files }, onProgress)
+- update(id, { name, files }, onProgress)
 - saveLayout(id, layout)
 - remove(id)
 
+### side-panel
+- emite 'close' y 'select(id)' para navegar entre nodos relacionados
+
+### floating-edge
+- getNodeIntersection(intersectionNode, otherNode)
+- getEdgePosition(node, point)
+
 ### auto-layout
 - autoLayout({ model, layout })
+
+### auto-layout-deep
+- buildDeepDive(module, model)
+- buildFlowEdgesForModule(flow, module)
 
 ### compute-connections
 - computeConnections(node, model)

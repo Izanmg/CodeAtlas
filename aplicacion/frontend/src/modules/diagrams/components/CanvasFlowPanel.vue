@@ -56,6 +56,22 @@ const layerColor = (layer) => {
   if (!layer) return 'var(--fg-faint)'
   return `var(--kind-${layer})`
 }
+
+// Pares (clave → texto) de las secciones libres del flujo (## Performance,
+// ## Security, etc.) que el parser conserva en `extensions`.
+const extensionEntries = computed(() => {
+  const ext = props.flow?.extensions
+  if (!ext || typeof ext !== 'object') return []
+  return Object.entries(ext).filter(([, v]) => v != null && String(v).trim() !== '')
+})
+
+function formatTitle(key) {
+  return key
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .join(' ')
+}
 </script>
 
 <template>
@@ -85,16 +101,21 @@ const layerColor = (layer) => {
       <ChevronUp :size="11" />
     </button>
 
-    <!-- Nombre + trigger -->
+    <!-- Nombre + descripción + trigger -->
     <div :style="{ padding: '8px 12px 10px', borderTop: '1px solid var(--border-subtle)' }">
       <div
         class="text-fg whitespace-nowrap overflow-hidden text-ellipsis"
         :style="{ fontSize: '13px', fontWeight: 600, letterSpacing: '-0.005em' }"
       >{{ flow.name }}</div>
       <div
+        v-if="flow.description"
+        class="text-fg-muted"
+        :style="{ fontSize: '11.5px', marginTop: '4px', lineHeight: 1.45 }"
+      >{{ flow.description }}</div>
+      <div
         v-if="flow.trigger"
         class="text-fg-muted"
-        :style="{ fontSize: '11px', marginTop: '3px', lineHeight: 1.4 }"
+        :style="{ fontSize: '11px', marginTop: '6px', lineHeight: 1.4 }"
       >
         <span class="font-mono uppercase text-fg-faint" :style="{ fontSize: '9px', letterSpacing: '0.07em', marginRight: '5px' }">trigger</span>
         {{ flow.trigger }}
@@ -166,6 +187,79 @@ const layerColor = (layer) => {
       :style="{ padding: '10px 12px', fontSize: '11px', borderTop: '1px solid var(--border-subtle)' }"
     >
       Este flujo no tiene pasos
+    </div>
+
+    <!-- Casos de error -->
+    <div
+      v-if="flow.errorCases?.length"
+      :style="{ borderTop: '1px solid var(--border-subtle)' }"
+    >
+      <div
+        class="font-mono uppercase"
+        :style="{
+          padding: '6px 12px 4px',
+          fontSize: '9.5px',
+          letterSpacing: '0.07em',
+          color: 'var(--kind-flow)',
+        }"
+      >casos de error · {{ flow.errorCases.length }}</div>
+      <ul
+        class="text-fg-muted m-0"
+        :style="{ padding: '0 12px 8px 28px', fontSize: '11.5px', lineHeight: '1.5' }"
+      >
+        <li v-for="(it, i) in flow.errorCases" :key="i">{{ it }}</li>
+      </ul>
+    </div>
+
+    <!-- Notas -->
+    <div
+      v-if="flow.notes"
+      :style="{ borderTop: '1px solid var(--border-subtle)' }"
+    >
+      <div
+        class="font-mono uppercase"
+        :style="{
+          padding: '6px 12px 4px',
+          fontSize: '9.5px',
+          letterSpacing: '0.07em',
+          color: 'var(--kind-flow)',
+        }"
+      >notas</div>
+      <div
+        class="text-fg-muted"
+        :style="{
+          padding: '0 12px 8px',
+          fontSize: '11.5px',
+          lineHeight: '1.55',
+          whiteSpace: 'pre-wrap',
+        }"
+      >{{ flow.notes }}</div>
+    </div>
+
+    <!-- Otras secciones libres del flujo -->
+    <div
+      v-for="[key, content] in extensionEntries"
+      :key="key"
+      :style="{ borderTop: '1px solid var(--border-subtle)' }"
+    >
+      <div
+        class="font-mono uppercase"
+        :style="{
+          padding: '6px 12px 4px',
+          fontSize: '9.5px',
+          letterSpacing: '0.07em',
+          color: 'var(--kind-flow)',
+        }"
+      >{{ formatTitle(key) }}</div>
+      <div
+        class="text-fg-muted"
+        :style="{
+          padding: '0 12px 8px',
+          fontSize: '11.5px',
+          lineHeight: '1.55',
+          whiteSpace: 'pre-wrap',
+        }"
+      >{{ content }}</div>
     </div>
   </div>
 </template>

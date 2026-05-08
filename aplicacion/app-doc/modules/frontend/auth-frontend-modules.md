@@ -21,14 +21,17 @@ files:
     folder: views
     path: LoginView.vue
     type: view
+    imports: [auth-store, auth-shell]
   - id: register-view
     folder: views
     path: RegisterView.vue
     type: view
+    imports: [auth-store, auth-shell]
   - id: auth-shell
     folder: components
     path: AuthShell.vue
     type: component
+    imports: [auth-visual-side]
   - id: auth-visual-side
     folder: components
     path: AuthVisualSide.vue
@@ -37,6 +40,7 @@ files:
     folder: stores
     path: auth.store.js
     type: store
+    imports: [auth-frontend-service]
   - id: auth-frontend-service
     folder: services
     path: auth.service.js

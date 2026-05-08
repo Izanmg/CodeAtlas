@@ -10,22 +10,38 @@ import { ref, computed } from 'vue'
 import { Shield, ChevronUp, ChevronDown } from 'lucide-vue-next'
 
 const props = defineProps({
-  rules: { type: Object, default: () => ({}) },
+  rules:    { type: Object, default: () => ({}) },
+  overview: { type: String, default: '' },
 })
 
 const open = ref(false)
 
 const groups = computed(() => [
-  { key: 'auth',        tag: 'auth',  label: 'Autenticación', items: props.rules.auth },
-  { key: 'navigation',  tag: 'nav',   label: 'Navegación',    items: props.rules.navigation },
-  { key: 'conventions', tag: 'conv',  label: 'Convenciones',  items: props.rules.conventions },
+  { key: 'auth',          tag: 'auth',  label: 'Autenticación',     items: props.rules.auth },
+  { key: 'navigation',    tag: 'nav',   label: 'Navegación',        items: props.rules.navigation },
+  { key: 'validation',    tag: 'valid', label: 'Validación',        items: props.rules.validation },
+  { key: 'conventions',   tag: 'conv',  label: 'Convenciones',      items: props.rules.conventions },
+  { key: 'technicalDecisions', tag: 'tech', label: 'Decisiones técnicas', items: props.rules.technicalDecisions },
 ].filter((g) => g.items?.length > 0))
 
 const total = computed(() =>
-  (props.rules.auth?.length || 0) +
-  (props.rules.navigation?.length || 0) +
-  (props.rules.conventions?.length || 0)
+  groups.value.reduce((s, g) => s + (g.items?.length || 0), 0)
 )
+
+// Extensiones libres definidas en 05-system-rules.md (## Performance, etc.).
+const extensionEntries = computed(() => {
+  const ext = props.rules.extensions
+  if (!ext || typeof ext !== 'object') return []
+  return Object.entries(ext).filter(([, v]) => v != null && String(v).trim() !== '')
+})
+
+function formatTitle(key) {
+  return key
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .join(' ')
+}
 </script>
 
 <template>
@@ -82,6 +98,31 @@ const total = computed(() =>
       </span>
     </button>
 
+    <!-- Overview del proyecto (sección ## Overview de 01-modules.md) -->
+    <div
+      v-if="overview"
+      :style="{ borderTop: '1px solid var(--border-subtle)' }"
+    >
+      <div
+        class="font-mono uppercase"
+        :style="{
+          padding: '6px 12px 4px',
+          fontSize: '9.5px',
+          letterSpacing: '0.07em',
+          color: 'var(--kind-rules)',
+        }"
+      >overview · Visión general</div>
+      <div
+        class="text-fg-muted"
+        :style="{
+          padding: '0 12px 8px',
+          fontSize: '11.5px',
+          lineHeight: '1.55',
+          whiteSpace: 'pre-wrap',
+        }"
+      >{{ overview }}</div>
+    </div>
+
     <!-- Grupos de reglas -->
     <div
       v-for="g in groups"
@@ -131,9 +172,35 @@ const total = computed(() =>
       </ul>
     </div>
 
+    <!-- Otras secciones libres (extensions) -->
+    <div
+      v-for="[key, content] in extensionEntries"
+      :key="key"
+      :style="{ borderTop: '1px solid var(--border-subtle)' }"
+    >
+      <div
+        class="font-mono uppercase"
+        :style="{
+          padding: '6px 12px 4px',
+          fontSize: '9.5px',
+          letterSpacing: '0.07em',
+          color: 'var(--kind-rules)',
+        }"
+      >{{ formatTitle(key) }}</div>
+      <div
+        class="text-fg-muted"
+        :style="{
+          padding: '0 12px 8px',
+          fontSize: '11.5px',
+          lineHeight: '1.55',
+          whiteSpace: 'pre-wrap',
+        }"
+      >{{ content }}</div>
+    </div>
+
     <!-- Estado vacío -->
     <div
-      v-if="groups.length === 0"
+      v-if="groups.length === 0 && !overview && extensionEntries.length === 0"
       class="text-fg-faint font-mono"
       :style="{ padding: '10px 12px', fontSize: '11px', borderTop: '1px solid var(--border-subtle)' }"
     >

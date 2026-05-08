@@ -165,10 +165,12 @@ files:
     folder: controllers
     path: auth.controller.js
     type: controller
+    imports: [auth-service]
   - id: auth-service
     folder: services
     path: auth.service.js
     type: service
+    imports: [auth-repository]
   - id: auth-repository
     folder: repositories
     path: auth.repository.js
@@ -225,6 +227,7 @@ Session tokens are JWT with a 24-hour expiry stored in the sessions table.
 | `files[].folder` | string | no | ID de la carpeta donde vive este archivo. Si se omite, el archivo está en la raíz del módulo |
 | `files[].path` | string | (si files) | Nombre o ruta relativa del archivo |
 | `files[].type` | string | (si files) | Tipo del archivo. Debe ser uno de los declarados en `file-types.backend` del índice |
+| `files[].imports` | array de IDs | no | IDs de **otros archivos del mismo módulo** que este archivo importa o usa. Genera aristas en la vista detallada del módulo. Las dependencias entre módulos van en `depends-on` del módulo, no aquí |
 
 ### Referencia de secciones Markdown
 

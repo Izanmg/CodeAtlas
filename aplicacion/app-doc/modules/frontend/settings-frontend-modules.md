@@ -19,10 +19,12 @@ files:
     folder: views
     path: SettingsView.vue
     type: view
+    imports: [settings-store]
   - id: settings-store
     folder: stores
     path: settings.store.js
     type: store
+    imports: [settings-frontend-service]
   - id: settings-frontend-service
     folder: services
     path: settings.service.js

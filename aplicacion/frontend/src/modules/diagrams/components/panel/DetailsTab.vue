@@ -11,10 +11,10 @@
     - rules → grupos por categoría
 -->
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import PanelSectionHeader from './PanelSectionHeader.vue'
 import Badge from '@/components/ui/Badge.vue'
-import { Lock, ExternalLink } from 'lucide-vue-next'
+import { Lock, ExternalLink, ChevronRight, Folder, FileText } from 'lucide-vue-next'
 
 const props = defineProps({
   node: { type: Object, required: true },
@@ -24,6 +24,65 @@ const props = defineProps({
 
 const kind = computed(() => props.node.data.kind)
 
+// Árbol de archivos del módulo: agrupa los files por folder y adjunta las
+// funciones declaradas en m.functions[fileId]. Los files sin folder caen
+// en `rootFiles` (carpeta raíz del módulo).
+const fileTree = computed(() => {
+  const folders = props.m.folders ?? []
+  const files = props.m.files ?? []
+  const functions = props.m.functions ?? {}
+
+  const byFolder = new Map()
+  for (const f of folders) byFolder.set(f.id, { folder: f, files: [] })
+
+  const rootFiles = []
+  for (const file of files) {
+    const enriched = { ...file, functions: functions[file.id] ?? [] }
+    if (file.folder && byFolder.has(file.folder)) {
+      byFolder.get(file.folder).files.push(enriched)
+    } else {
+      rootFiles.push(enriched)
+    }
+  }
+
+  return {
+    folders: Array.from(byFolder.values()),
+    rootFiles,
+  }
+})
+
+const hasFileTree = computed(() =>
+  (props.m.folders?.length || 0) > 0 || (props.m.files?.length || 0) > 0
+)
+
+const fileTreeCount = computed(() =>
+  (props.m.files?.length || 0)
+)
+
+// Estados de despliegue independientes por folder y por file.
+const openFolders = ref(new Set())
+const openFiles = ref(new Set())
+
+function toggleFolder(id) {
+  const next = new Set(openFolders.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  openFolders.value = next
+}
+
+function toggleFile(id) {
+  const next = new Set(openFiles.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  openFiles.value = next
+}
+
+// Reset al cambiar de nodo: cada módulo arranca con todo colapsado.
+watch(() => props.node.id, () => {
+  openFolders.value = new Set()
+  openFiles.value = new Set()
+})
+
 const screens = computed(() => {
   if (kind.value !== 'frontend') return []
   return (props.m.screens || [])
@@ -32,10 +91,27 @@ const screens = computed(() => {
 })
 
 const ruleGroups = computed(() => [
-  { label: 'Autenticación', items: props.m.auth },
-  { label: 'Navegación', items: props.m.navigation },
-  { label: 'Convenciones', items: props.m.conventions },
+  { label: 'Autenticación',     items: props.m.auth },
+  { label: 'Navegación',        items: props.m.navigation },
+  { label: 'Validación',        items: props.m.validation },
+  { label: 'Convenciones',      items: props.m.conventions },
+  { label: 'Decisiones técnicas', items: props.m.technicalDecisions },
 ])
+
+// Pares (clave → texto) de las secciones libres del usuario.
+const extensionEntries = computed(() => {
+  const ext = props.m.extensions
+  if (!ext || typeof ext !== 'object') return []
+  return Object.entries(ext).filter(([, v]) => v != null && String(v).trim() !== '')
+})
+
+function formatTitle(key) {
+  return key
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .join(' ')
+}
 
 // Parsea el bloque DBML de m.table cuando m.fields no está disponible
 // (diagramas generados antes del fix del parser)
@@ -129,6 +205,202 @@ const dbFields = computed(() =>
       </div>
     </template>
 
+    <!-- archivos (backend + frontend) -->
+    <template v-if="(kind === 'backend' || kind === 'frontend') && hasFileTree">
+      <div>
+        <PanelSectionHeader :count="fileTreeCount">Archivos</PanelSectionHeader>
+        <div
+          class="flex flex-col rounded overflow-hidden"
+          :style="{ border: '1px solid var(--border-subtle)', background: 'var(--bg-subtle)' }"
+        >
+          <!-- Carpetas -->
+          <template v-for="(group, gi) in fileTree.folders" :key="group.folder.id">
+            <button
+              class="w-full flex items-center text-left hover:bg-bg-muted transition-colors duration-100"
+              :style="{
+                padding: '6px 9px',
+                gap: '6px',
+                fontSize: '12px',
+                borderTop: gi > 0 ? '1px solid var(--border-subtle)' : 'none',
+              }"
+              @click="toggleFolder(group.folder.id)"
+            >
+              <ChevronRight
+                :size="11"
+                class="text-fg-faint transition-transform duration-150 flex-shrink-0"
+                :style="{ transform: openFolders.has(group.folder.id) ? 'rotate(90deg)' : 'none' }"
+              />
+              <Folder :size="12" class="text-fg-muted flex-shrink-0" />
+              <span class="text-fg font-medium flex-1 truncate font-mono" style="font-size: 11.5px;">
+                {{ group.folder.id }}
+              </span>
+              <span class="font-mono text-fg-faint" style="font-size: 10px;">
+                {{ group.files.length }}
+              </span>
+            </button>
+
+            <!-- Archivos de la carpeta -->
+            <template v-if="openFolders.has(group.folder.id)">
+              <template v-for="file in group.files" :key="file.id">
+                <button
+                  class="w-full flex items-center text-left hover:bg-bg-muted transition-colors duration-100"
+                  :style="{
+                    padding: '5px 9px 5px 30px',
+                    gap: '6px',
+                    fontSize: '11.5px',
+                    borderTop: '1px solid var(--border-subtle)',
+                    cursor: file.functions.length ? 'pointer' : 'default',
+                  }"
+                  @click="file.functions.length && toggleFile(file.id)"
+                >
+                  <ChevronRight
+                    v-if="file.functions.length"
+                    :size="10"
+                    class="text-fg-faint transition-transform duration-150 flex-shrink-0"
+                    :style="{ transform: openFiles.has(file.id) ? 'rotate(90deg)' : 'none' }"
+                  />
+                  <span v-else style="width: 10px; flex-shrink: 0;" />
+                  <FileText :size="11" class="text-fg-faint flex-shrink-0" />
+                  <span class="text-fg flex-1 truncate font-mono">{{ file.path }}</span>
+                  <span
+                    v-if="file.type"
+                    class="font-mono uppercase text-fg-faint"
+                    :style="{ fontSize: '9px', letterSpacing: '0.06em' }"
+                  >{{ file.type }}</span>
+                </button>
+
+                <!-- Funciones del archivo -->
+                <template v-if="openFiles.has(file.id)">
+                  <div
+                    v-for="(fn, fi) in file.functions"
+                    :key="fi"
+                    class="text-fg-muted font-mono"
+                    :style="{
+                      padding: '3px 9px 3px 52px',
+                      fontSize: '11px',
+                      lineHeight: '1.5',
+                      borderTop: '1px solid var(--border-subtle)',
+                      background: 'var(--bg)',
+                    }"
+                  >
+                    <span class="text-fg-faint" style="margin-right: 4px;">›</span>{{ fn }}
+                  </div>
+                </template>
+              </template>
+              <div
+                v-if="!group.files.length"
+                class="text-fg-faint font-mono italic"
+                :style="{ padding: '5px 9px 5px 30px', fontSize: '10.5px', borderTop: '1px solid var(--border-subtle)' }"
+              >
+                vacía
+              </div>
+            </template>
+          </template>
+
+          <!-- Archivos en la raíz del módulo (sin carpeta) -->
+          <template v-for="(file, fi) in fileTree.rootFiles" :key="file.id">
+            <button
+              class="w-full flex items-center text-left hover:bg-bg-muted transition-colors duration-100"
+              :style="{
+                padding: '5px 9px',
+                gap: '6px',
+                fontSize: '11.5px',
+                borderTop: (fileTree.folders.length || fi > 0) ? '1px solid var(--border-subtle)' : 'none',
+                cursor: file.functions.length ? 'pointer' : 'default',
+              }"
+              @click="file.functions.length && toggleFile(file.id)"
+            >
+              <ChevronRight
+                v-if="file.functions.length"
+                :size="10"
+                class="text-fg-faint transition-transform duration-150 flex-shrink-0"
+                :style="{ transform: openFiles.has(file.id) ? 'rotate(90deg)' : 'none' }"
+              />
+              <span v-else style="width: 10px; flex-shrink: 0;" />
+              <FileText :size="11" class="text-fg-faint flex-shrink-0" />
+              <span class="text-fg flex-1 truncate font-mono">{{ file.path }}</span>
+              <span
+                v-if="file.type"
+                class="font-mono uppercase text-fg-faint"
+                :style="{ fontSize: '9px', letterSpacing: '0.06em' }"
+              >{{ file.type }}</span>
+            </button>
+
+            <template v-if="openFiles.has(file.id)">
+              <div
+                v-for="(fn, fni) in file.functions"
+                :key="fni"
+                class="text-fg-muted font-mono"
+                :style="{
+                  padding: '3px 9px 3px 31px',
+                  fontSize: '11px',
+                  lineHeight: '1.5',
+                  borderTop: '1px solid var(--border-subtle)',
+                  background: 'var(--bg)',
+                }"
+              >
+                <span class="text-fg-faint" style="margin-right: 4px;">›</span>{{ fn }}
+              </div>
+            </template>
+          </template>
+        </div>
+      </div>
+    </template>
+
+    <!-- modules: state (frontend), purpose, notes (backend + frontend) -->
+    <template v-if="kind === 'frontend' && m.state?.length">
+      <div>
+        <PanelSectionHeader :count="m.state.length">Estado</PanelSectionHeader>
+        <div class="flex flex-col" style="gap: 3px;">
+          <div
+            v-for="(s, i) in m.state"
+            :key="i"
+            class="font-mono text-fg rounded"
+            :style="{
+              fontSize: '11.5px',
+              padding: '5px 9px',
+              background: 'var(--bg-subtle)',
+              border: '1px solid var(--border-subtle)',
+            }"
+          >{{ s }}</div>
+        </div>
+      </div>
+    </template>
+
+    <template v-if="(kind === 'backend' || kind === 'frontend') && m.purpose">
+      <div>
+        <PanelSectionHeader>Descripción</PanelSectionHeader>
+        <div
+          class="text-fg rounded"
+          :style="{
+            fontSize: '12.5px',
+            lineHeight: '1.6',
+            padding: '9px 11px',
+            background: 'var(--bg-subtle)',
+            border: '1px solid var(--border-subtle)',
+            whiteSpace: 'pre-wrap',
+          }"
+        >{{ m.purpose }}</div>
+      </div>
+    </template>
+
+    <template v-if="(kind === 'backend' || kind === 'frontend') && m.notes">
+      <div>
+        <PanelSectionHeader>Notas</PanelSectionHeader>
+        <div
+          class="text-fg rounded"
+          :style="{
+            fontSize: '12.5px',
+            lineHeight: '1.6',
+            padding: '9px 11px',
+            background: 'var(--bg-subtle)',
+            border: '1px solid var(--border-subtle)',
+            whiteSpace: 'pre-wrap',
+          }"
+        >{{ m.notes }}</div>
+      </div>
+    </template>
+
     <!-- screen -->
     <template v-if="kind === 'screen'">
       <div v-if="m.routes?.length">
@@ -169,6 +441,79 @@ const dbFields = computed(() =>
               border: '1px solid var(--border-subtle)',
             }"
           >{{ c }}</div>
+        </div>
+      </div>
+      <div v-if="m.folder || m.file">
+        <PanelSectionHeader>Implementación</PanelSectionHeader>
+        <div
+          class="flex items-center font-mono text-fg rounded"
+          :style="{
+            fontSize: '11.5px',
+            padding: '6px 10px',
+            background: 'var(--bg-subtle)',
+            border: '1px solid var(--border-subtle)',
+            gap: '8px',
+          }"
+        >
+          <span v-if="m.folder" class="text-fg-muted">📁 {{ m.folder }}</span>
+          <span v-if="m.folder && m.file" class="text-fg-faint">/</span>
+          <span v-if="m.file">📄 {{ m.file }}</span>
+        </div>
+      </div>
+      <div v-if="m.fullDescription">
+        <PanelSectionHeader>Descripción</PanelSectionHeader>
+        <div
+          class="text-fg rounded"
+          :style="{
+            fontSize: '12.5px',
+            lineHeight: '1.6',
+            padding: '9px 11px',
+            background: 'var(--bg-subtle)',
+            border: '1px solid var(--border-subtle)',
+            whiteSpace: 'pre-wrap',
+          }"
+        >{{ m.fullDescription }}</div>
+      </div>
+      <div v-if="m.elements?.length">
+        <PanelSectionHeader :count="m.elements.length">Elementos</PanelSectionHeader>
+        <ul
+          class="text-fg flex flex-col m-0"
+          style="padding-left: 16px; font-size: 12.5px; line-height: 1.55; gap: 4px;"
+        >
+          <li v-for="(it, i) in m.elements" :key="i">{{ it }}</li>
+        </ul>
+      </div>
+      <div v-if="m.actions?.length">
+        <PanelSectionHeader :count="m.actions.length">Acciones</PanelSectionHeader>
+        <div class="flex flex-col" style="gap: 3px;">
+          <div
+            v-for="(a, i) in m.actions"
+            :key="i"
+            class="font-mono text-fg rounded"
+            :style="{
+              fontSize: '11.5px',
+              padding: '5px 9px',
+              background: 'var(--bg-subtle)',
+              border: '1px solid var(--border-subtle)',
+            }"
+          >{{ a }}</div>
+        </div>
+      </div>
+      <div v-if="m.states?.length">
+        <PanelSectionHeader :count="m.states.length">Estados</PanelSectionHeader>
+        <div class="flex" style="gap: 4px; flex-wrap: wrap;">
+          <span
+            v-for="(s, i) in m.states"
+            :key="i"
+            class="font-mono uppercase text-fg-muted rounded"
+            :style="{
+              fontSize: '10px',
+              letterSpacing: '0.06em',
+              padding: '3px 8px',
+              background: 'var(--bg-muted)',
+              border: '1px solid var(--border-subtle)',
+            }"
+          >{{ s }}</span>
         </div>
       </div>
     </template>
@@ -212,33 +557,22 @@ const dbFields = computed(() =>
               background: 'var(--bg-subtle)',
               border: '1px solid var(--border-subtle)',
             }"
-          >{{ r.type }} → {{ r.target }} ({{ r.field }})</div>
+          >{{ r.type }} → {{ r.target }}<template v-if="r.field || r.sourceField"> ({{ r.field || r.sourceField }})</template></div>
         </div>
       </div>
-    </template>
-
-    <!-- flow -->
-    <template v-if="kind === 'flow'">
-      <div>
-        <PanelSectionHeader>Disparador</PanelSectionHeader>
-        <p class="text-fg m-0" style="font-size: 13px; line-height: 1.5;">{{ m.trigger }}</p>
-      </div>
-      <div>
-        <PanelSectionHeader :count="m.steps.length">Pasos</PanelSectionHeader>
-        <ol class="m-0 p-0 flex flex-col" style="list-style: none; gap: 6px;">
-          <li
-            v-for="(step, i) in m.steps"
-            :key="i"
-            class="flex"
-            style="gap: 9px;"
-          >
-            <span
-              class="grid place-items-center font-mono font-semibold flex-shrink-0 rounded-full bg-kind-flow-bg text-kind-flow"
-              :style="{ width: '20px', height: '20px', fontSize: '10.5px' }"
-            >{{ i + 1 }}</span>
-            <span class="text-fg" style="font-size: 12.5px; padding-top: 2px; line-height: 1.45;">{{ step }}</span>
-          </li>
-        </ol>
+      <div v-if="m.notes">
+        <PanelSectionHeader>Notas</PanelSectionHeader>
+        <div
+          class="text-fg rounded"
+          :style="{
+            fontSize: '12.5px',
+            lineHeight: '1.6',
+            padding: '9px 11px',
+            background: 'var(--bg-subtle)',
+            border: '1px solid var(--border-subtle)',
+            whiteSpace: 'pre-wrap',
+          }"
+        >{{ m.notes }}</div>
       </div>
     </template>
 
@@ -252,6 +586,27 @@ const dbFields = computed(() =>
           </ul>
         </div>
       </template>
+    </template>
+
+    <!-- otras secciones (extensiones libres del usuario, válido para cualquier tipo) -->
+    <template v-if="extensionEntries.length">
+      <div
+        v-for="[key, content] in extensionEntries"
+        :key="key"
+      >
+        <PanelSectionHeader>{{ formatTitle(key) }}</PanelSectionHeader>
+        <div
+          class="text-fg rounded"
+          :style="{
+            fontSize: '12.5px',
+            lineHeight: '1.6',
+            padding: '9px 11px',
+            background: 'var(--bg-subtle)',
+            border: '1px solid var(--border-subtle)',
+            whiteSpace: 'pre-wrap',
+          }"
+        >{{ content }}</div>
+      </div>
     </template>
   </div>
 </template>
