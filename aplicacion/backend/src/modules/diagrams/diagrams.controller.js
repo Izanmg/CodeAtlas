@@ -1,5 +1,5 @@
 import * as service from './diagrams.service.js'
-import * as repo from './diagrams.repository.js'
+import * as repo   from './diagrams.repository.js'
 
 export async function getRecent(req, res) {
   try {
@@ -48,6 +48,35 @@ export async function generate(req, res) {
   } catch (err) {
     const isValidation = err.message.startsWith('[')
     const status = err.message.includes('acceso') ? 403 : isValidation ? 400 : 500
+    res.status(status).json({ error: err.message })
+  }
+}
+
+export async function update(req, res) {
+  const files = (req.files ?? []).map(f => ({
+    filename: f.originalname,
+    content:  f.buffer.toString('utf-8'),
+  }))
+
+  try {
+    const diagram = await service.update(req.params.id, req.userId, {
+      name: req.body.name,
+      files,
+    })
+    res.status(200).json(diagram)
+  } catch (err) {
+    const isValidation = err.message.startsWith('[')
+    const status = err.message.includes('acceso') ? 403 : isValidation ? 400 : 404
+    res.status(status).json({ error: err.message })
+  }
+}
+
+export async function saveLayout(req, res) {
+  try {
+    await service.saveLayout(req.params.id, req.userId, req.body.layout)
+    res.status(204).send()
+  } catch (err) {
+    const status = err.message.includes('acceso') ? 403 : 404
     res.status(status).json({ error: err.message })
   }
 }

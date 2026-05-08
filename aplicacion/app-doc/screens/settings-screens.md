@@ -1,24 +1,43 @@
 ---
 type: screen
 id: settings
-name: Settings
-description: Pantalla de configuración personal — cambio de tema (claro/oscuro) y edición de datos de perfil del usuario
+name: Ajustes
+description: Pantalla de preferencias del usuario y datos de cuenta
 module: settings-frontend
+folder: views
+file: settings-view
 requires-auth: true
+routes:
+  - /settings
+navigates-to: [dashboard, login]
+components:
+  - AppShell
+  - PageHeader
+  - Card
+  - Field
+  - Input
+  - Button
+  - Segmented
 ---
 
 ## Description
-
-Ruta `/settings`. Permite al usuario cambiar el tema visual de la aplicación y actualizar su nombre y email. Los cambios de tema se aplican inmediatamente al atributo `data-theme` del `<html>` y se persisten en localStorage.
+Centraliza las preferencias del usuario (tema visual: claro/oscuro) y la edición de los datos de cuenta (nombre, email, cambio de contraseña). El cierre de sesión también vive aquí: al cerrar sesión se limpian los stores de auth y settings y se redirige a `/login`.
 
 ## Elements
-
-- selector de tema (claro / oscuro / sistema)
-- formulario de perfil (nombre, email)
-- botón Guardar cambios
-- indicador de éxito al guardar
+- bloque "Apariencia" con selector de tema light/dark
+- bloque "Perfil" con inputs de nombre y email + botón Guardar cambios
+- bloque "Contraseña" con tres inputs (actual, nueva, confirmación) + botón Cambiar
+- botón "Cerrar sesión"
+- mensajes de éxito o error por bloque tras cada acción
 
 ## Actions
+- change-theme
+- update-profile
+- change-password
+- logout
 
-- toggle-theme
-- save-profile(patch)
+## States
+- default
+- saving
+- success
+- error

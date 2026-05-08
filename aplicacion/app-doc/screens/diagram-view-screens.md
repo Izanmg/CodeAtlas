@@ -1,52 +1,52 @@
 ---
 type: screen
 id: diagram-view
-name: Diagram View
-description: Canvas interactivo a pantalla completa que visualiza la arquitectura de una aplicación como un diagrama de nodos y conexiones
+name: Canvas del diagrama
+description: Vista interactiva del diagrama con Vue Flow, modo Relaciones y modo Flujos
 module: diagrams-frontend
+folder: views
+file: diagram-view
 requires-auth: true
+routes:
+  - /diagrams/:id
+navigates-to: [project-detail, dashboard]
+components:
+  - VueFlow
+  - CanvasToolbar
+  - CanvasLegend
+  - CanvasRules
+  - CanvasFlowSelector
+  - CanvasFlowPanel
+  - SidePanel
 ---
 
 ## Description
-
-Ruta `/diagrams/:id`. Ocupa toda la pantalla. Renderiza el diagrama con Vue Flow usando seis tipos de nodo personalizados. Tiene una barra superior con el nombre del proyecto y del diagrama, y un contador de bloques y conexiones.
-
-El usuario puede:
-- Hacer clic en un nodo para activar el **modo foco** (los nodos no relacionados se atenúan) y abrir el **side panel**
-- Hacer clic en el lienzo o pulsar Esc para limpiar el foco y cerrar el panel
-- Usar el **toolbar de filtros** para activar/desactivar tipos de nodo
-- Hacer **fit view**, activar/desactivar el minimap y limpiar el foco desde el toolbar
-- Navegar por el canvas (pan, zoom) con el ratón o trackpad
-- Expandir la **leyenda** flotante con los tipos de bloque y estilos de conexión
-- Explorar el nodo seleccionado en el **side panel** con tres pestañas: Resumen, Conexiones y Detalle
+Vista a pantalla completa del canvas. Renderiza los nodos del modelo con Vue Flow, soporta drag & drop con historial undo/redo, guardado del layout en el backend y dos modos de visualización: Relaciones (edges coloreados por tipo, filtros por capa, panel de reglas a la izquierda) y Flujos (selector de flujo a la derecha, pasos secuenciales a la izquierda, edges amarillos dirigidos entre nodos del flujo activo).
 
 ## Elements
-
-- barra superior (proyecto / nombre del diagrama / contadores)
-- botón Volver (navega al proyecto)
-- canvas Vue Flow (pantalla completa menos la barra)
-- toolbar de filtros por tipo de nodo (CanvasToolbar)
-- leyenda flotante inferior izquierda (CanvasLegend)
-- minimap superior derecho (MiniMap)
-- controles de zoom inferior derecho (Controls)
-- side panel derecho (SidePanel, 380px)
-- seis nodos personalizados: BackendNode, FrontendNode, ScreenNode, DatabaseNode, FlowNode, RulesNode
+- topbar con nombre del diagrama, breadcrumb, undo/redo, botón Guardar
+- toolbar central con toggle Relaciones/Flujos, filtros por tipo de nodo, botón ajustar vista
+- panel flotante izquierdo (CanvasRules en modo Relaciones, CanvasFlowPanel en modo Flujos)
+- panel flotante derecho (solo en modo Flujos: CanvasFlowSelector)
+- nodos del canvas con sus chips de flujos al pie
+- side panel derecho que se abre al seleccionar un nodo (Resumen / Conexiones / Detalle)
+- modal "salir sin guardar" si hay cambios pendientes al navegar
 
 ## Actions
-
-- click-node (activa modo foco y abre side panel)
-- click-pane (limpia foco y cierra panel)
-- press-escape (cierra panel)
-- toggle-filter(kind)
+- select-node
+- drag-node
+- save-layout
+- undo / redo
+- toggle-mode
+- pick-flow
+- toggle-filter
 - fit-view
-- toggle-minimap
 - clear-focus
-- go-back
-- select-connected-node(id) (desde el side panel)
+- back-to-project
 
 ## States
-
-- loading (antes de que el diagrama se cargue)
-- focus-active (un nodo está seleccionado — lienzo con clase rf-dim)
-- panel-open (nodo seleccionado — side panel visible)
-- not-found (diagrama no existe — redirige al dashboard)
+- default
+- focus
+- editing
+- saving
+- saved

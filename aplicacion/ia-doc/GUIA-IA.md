@@ -65,9 +65,11 @@ Respeta siempre este orden. Los archivos posteriores referencian IDs definidos e
 3. modules/frontend/*.md       (módulos de frontend — referencian módulos de backend)
 4. database/*.md               (entidades — referencian módulos de backend en used-by)
 5. screens/*.md                (pantallas — referencian módulos de frontend)
-6. flows/*.md                  (flujos — referencian todo lo anterior)
+6. flows/*.md                  (flujos — referencian todo lo anterior; SIEMPRE al final de bd, módulos y pantallas)
 7. 05-system-rules.md          (reglas — no referencia nada, puede ir al final)
 ```
+
+**Importante para el modo entrevista:** las preguntas sobre flujos deben hacerse siempre **después** de tener definidos los módulos de backend, los módulos de frontend, las entidades de base de datos y las pantallas. Los prefijos de referencia de los pasos (`[backend:...]`, `[screen:...]`, etc.) solo se pueden rellenar correctamente cuando los IDs de esos elementos ya están confirmados.
 
 ---
 
@@ -98,6 +100,8 @@ Con esas respuestas ya puedes generar `01-modules.md` y tener los IDs de módulo
 #### Progresión bloque a bloque
 
 Avanza en el orden de generación definido arriba. Para cada bloque, pregunta lo necesario para rellenar los campos obligatorios antes de los opcionales. No solicites información que el usuario no haya mencionado; si algo no queda claro, pregunta.
+
+**Flujos — cuándo preguntar:** no preguntes sobre flujos hasta que hayas terminado los bloques de módulos (backend y frontend), base de datos y pantallas. Los pasos de un flujo llevan prefijos de referencia (`[backend:auth-backend/archivo.ts/función]`, `[screen:login]`, etc.) que solo se pueden rellenar correctamente cuando esos IDs ya están definidos y confirmados. Si el usuario menciona un flujo antes de ese momento, anótalo mentalmente pero no generes el archivo todavía.
 
 Cuando generes un archivo, muéstralo completo con el bloque frontmatter `---` incluido. No uses placeholders como `[rellenar aquí]` — si el usuario no sabe un valor, usa un valor sensato o una lista vacía `[]`.
 
@@ -331,11 +335,12 @@ database: [users]
 ---
 
 ## Steps
-1. User enters username and password on the login screen
-2. Frontend calls POST /auth/login with the credentials
-3. Backend validates credentials against the users table
-4. Backend generates and returns a session token
-5. Frontend stores the token and redirects to dashboard
+- [screen:login] El usuario rellena el formulario de login
+- [frontend:auth-frontend/LoginView.vue/handleLogin] Se valida el formulario y se llama a POST /auth/login
+- [backend:auth-backend/auth.controller.ts/login] Se validan las credenciales
+- [database:users] Se consulta el usuario en base de datos
+- [backend:auth-backend/auth.service.ts/generateToken] Se genera el JWT
+- [screen:dashboard] Se almacena el token y se redirige al dashboard
 
 ## Error Cases
 - Invalid credentials: show error message on login screen
@@ -347,6 +352,8 @@ database: [users]
 **Sección obligatoria:** `## Steps`
 
 **Secciones opcionales:** `## Error Cases`, `## Notes`
+
+**Formato de los pasos:** cada paso es un ítem de lista (`-`) con un prefijo de referencia opcional `[capa:moduleId/archivo/función]` seguido del texto descriptivo. Los niveles de granularidad son opcionales de derecha a izquierda. Los pasos sin prefijo son válidos (texto simple, sin edges en el diagrama).
 
 Detalle completo → `ia-doc/formatos/flujos.md`
 
@@ -442,4 +449,4 @@ Detalle completo → `ia-doc/formatos/reglas.md`
 
 7. **La sección `## Table` en entidades debe contener un bloque de código con la etiqueta `dbml`.** Sin esa etiqueta el contenido se guarda igual pero no se puede renderizar como diagrama de base de datos.
 
-8. **Los pasos de `## Steps` en flujos deben ser una lista numerada (`1.`, `2.`...) o de puntos (`-`).** El parser los convierte en un array de strings.
+8. **Los pasos de `## Steps` en flujos deben ser una lista de puntos (`-`) con un prefijo de referencia opcional `[capa:ref]` al principio de cada ítem.** El formato es `- [capa:moduleId/archivo/función] Descripción`. Los pasos sin prefijo son válidos pero no generan edges ni chips en el diagrama. Las capas válidas son: `screen`, `frontend`, `backend`, `database`. Los niveles de granularidad son opcionales de derecha a izquierda (`[backend:mod]`, `[backend:mod/archivo.ts]`, `[backend:mod/archivo.ts/función]`).

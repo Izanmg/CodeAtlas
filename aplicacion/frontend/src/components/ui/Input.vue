@@ -20,7 +20,7 @@ defineProps({
   readonly: { type: Boolean, default: false },
 })
 
-defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'focus', 'blur'])
 
 const focused = ref(false)
 </script>
@@ -47,9 +47,9 @@ const focused = ref(false)
       class="w-full bg-transparent border-none outline-none text-fg"
       :class="mono ? 'font-mono' : ''"
       style="padding: 8px 11px; font-size: 13px;"
-      @input="$emit('update:modelValue', $event.target.value)"
-      @focus="focused = true"
-      @blur="focused = false"
+      @input="emit('update:modelValue', $event.target.value)"
+      @focus="focused = true; emit('focus', $event)"
+      @blur="focused = false; emit('blur', $event)"
     />
   </div>
 </template>

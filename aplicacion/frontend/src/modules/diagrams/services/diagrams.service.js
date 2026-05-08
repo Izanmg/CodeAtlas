@@ -46,6 +46,30 @@ export async function generate({ projectId, name, files }, onProgress) {
   return normalize(diagram)
 }
 
+export async function saveLayout(id, layout) {
+  return http(`/diagrams/${id}/layout`, {
+    method: 'PATCH',
+    body: JSON.stringify({ layout }),
+  })
+}
+
+export async function update(id, { name, files = [] }, onProgress) {
+  onProgress?.({ progress: 20, label: files.length ? 'Preparando archivos…' : 'Guardando…' })
+
+  const form = new FormData()
+  form.append('name', name)
+  for (const f of files) {
+    if (f.file instanceof File) form.append('files', f.file, f.name)
+  }
+
+  if (files.length) onProgress?.({ progress: 50, label: 'Analizando documentación…' })
+
+  const diagram = await http(`/diagrams/${id}`, { method: 'PATCH', body: form })
+
+  onProgress?.({ progress: 100, label: files.length ? '¡Diagrama actualizado!' : 'Guardado' })
+  return normalize(diagram)
+}
+
 export async function remove(id) {
   return http(`/diagrams/${id}`, { method: 'DELETE' })
 }

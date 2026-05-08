@@ -2,29 +2,36 @@
 type: screen
 id: dashboard
 name: Dashboard
-description: Vista de inicio del usuario autenticado — resumen de proyectos recientes y diagramas recientes con accesos directos
+description: Pantalla de inicio con proyectos del usuario y diagramas recientes
 module: dashboard-frontend
+folder: views
+file: dashboard-view
 requires-auth: true
+routes:
+  - /
+navigates-to: [project-detail, diagram-view, settings]
+components:
+  - ProjectCard
+  - DiagramCard
 ---
 
 ## Description
-
-Ruta raíz `/`. Muestra dos secciones: proyectos recientes (cuadrícula de tarjetas con nombre, descripción y contador de diagramas) y diagramas recientes (tarjetas con nombre y proyecto al que pertenecen). Incluye acceso rápido para crear un nuevo proyecto.
+Página principal tras el login. Se divide en dos secciones: el listado de proyectos del usuario (con botón para crear uno nuevo) y los diagramas recientes (los últimos 10 generados). Click en un proyecto navega a su detalle; click en un diagrama abre directamente el canvas.
 
 ## Elements
-
-- cuadrícula de proyectos recientes
-- cuadrícula de diagramas recientes
-- botón Nuevo proyecto
-- barra lateral de navegación
+- header con nombre + iniciales del usuario
+- botón "Nuevo proyecto"
+- grid de tarjetas de proyectos
+- listado horizontal de diagramas recientes
+- estado vacío con mensaje guía cuando no hay proyectos todavía
 
 ## Actions
-
-- go-to-project(id)
-- go-to-diagram(id)
-- open-new-project-modal
+- create-project
+- open-project
+- open-diagram
+- go-to-settings
 
 ## States
-
-- loading (mientras se cargan proyectos y diagramas)
-- empty (cuando no hay proyectos todavía)
+- default
+- loading
+- empty

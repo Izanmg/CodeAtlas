@@ -25,6 +25,14 @@ Ejemplos de flujos con sentido real:
 
 ---
 
+## Cuándo generarlos
+
+**Los flujos siempre se generan al final**, después de haber definido módulos de backend, módulos de frontend, entidades de base de datos y pantallas. Los prefijos de referencia de los pasos usan IDs de esos elementos — si no están definidos todavía, los prefijos no se pueden rellenar correctamente.
+
+En el modo entrevista: no preguntes sobre flujos hasta que los bloques anteriores estén completos. Si el usuario menciona un flujo antes, anótalo y vuelve a él cuando llegue el momento.
+
+---
+
 ## Ruta
 
 ```
@@ -56,14 +64,15 @@ database: [users, sessions]
 ---
 
 ## Steps
-1. User enters username and password on the login screen
-2. handleLogin() validates that both fields are filled
-3. handleLogin() calls POST /auth/login with the credentials
-4. login() looks up the user by username in the users table
-5. login() validates the password hash
-6. login() creates a new session in the sessions table and returns a JWT token
-7. handleLogin() stores the token in localStorage under auth_token
-8. handleLogin() redirects the user to the dashboard screen
+- [screen:login] El usuario rellena el formulario con usuario y contraseña
+- [frontend:auth-frontend/LoginView.vue/handleLogin] Se validan los campos y se llama a POST /auth/login
+- [backend:auth-backend/auth.controller.ts/login] Se busca el usuario por nombre en la tabla users
+- [backend:auth-backend/auth.controller.ts/login] Se compara la contraseña con el hash almacenado
+- [database:users] Se consulta el registro del usuario
+- [backend:auth-backend/auth.service.ts/generateToken] Se genera un JWT firmado y se crea la sesión
+- [database:sessions] Se guarda el registro de sesión
+- [frontend:auth-frontend/LoginView.vue/handleLogin] Se guarda el token en localStorage bajo auth_token
+- [screen:dashboard] El usuario es redirigido al dashboard
 
 ## Error Cases
 - Empty fields: handleLogin() shows a validation error before calling the API
@@ -122,15 +131,38 @@ modules:
 | `file` | **sí** en formato detallado | ID de un archivo declarado en `files` del módulo referenciado |
 | `functions` | no | Lista de nombres de funciones declaradas en ese archivo que participan en el flujo |
 
-**Los dos formatos pueden coexistir** en el mismo flujo. Algunos módulos pueden ir con detalle y otros solo con ID:
+**Los dos formatos pueden coexistir** en el mismo flujo. Algunos módulos pueden ir con detalle y otros solo con ID.
 
-```yaml
-modules:
-  - id: auth-frontend
-    file: login-view
-    functions: [handleLogin]
-  - id: notifications-backend
+---
+
+## Formato de la sección `## Steps`
+
+Cada paso es un ítem de lista (`-`) con un **prefijo de referencia opcional** seguido del texto descriptivo:
+
 ```
+- [capa:moduleId/archivo/función] Descripción del paso
+```
+
+### Sintaxis del prefijo
+
+| Capa | Ejemplo | Qué referencia |
+|---|---|---|
+| `screen` | `[screen:login]` | Una pantalla por su ID |
+| `frontend` | `[frontend:auth-frontend/LoginView.vue]` | Módulo frontend / componente |
+| `backend` | `[backend:auth-backend/auth.service.ts/generateToken]` | Módulo backend / archivo / función |
+| `database` | `[database:users]` | Tabla de base de datos |
+| *(sin prefijo)* | *(ausente)* | Paso sin nodo asignado — válido, aparece en el panel como texto simple |
+
+Los niveles de granularidad son **opcionales de derecha a izquierda**:
+- `[backend:auth-backend]` → solo módulo
+- `[backend:auth-backend/auth.service.ts]` → módulo + archivo
+- `[backend:auth-backend/auth.service.ts/generateToken]` → módulo + archivo + función
+
+### Efecto en el diagrama
+
+- Cada nodo del canvas que tenga al menos un paso referenciado muestra un **chip** con el nombre del flujo.
+- En el **modo Flujos** del canvas, se dibujan edges amarillos entre los nodos de pasos consecutivos cuando el nodo cambia. Si dos pasos consecutivos apuntan al mismo nodo, se agrupan visualmente sin generar edge entre ellos.
+- El panel lateral muestra los pasos en orden con su referencia (capa, archivo, función). El nodo seleccionado en el canvas resalta sus pasos con un borde.
 
 ---
 
@@ -138,7 +170,7 @@ modules:
 
 | Sección | Obligatoria | Contenido |
 |---------|-------------|-----------|
-| `## Steps` | **sí** | Lista ordenada de los pasos del proceso de principio a fin. Debe describir qué hace el usuario, qué hace el frontend y qué hace el backend en cada paso |
+| `## Steps` | **sí** | Lista de pasos (`-`) con prefijo `[capa:ref]` opcional. Describe el proceso completo de principio a fin |
 | `## Error Cases` | no | Qué puede fallar en cada momento del flujo y cómo se gestiona. Lista de puntos |
 | `## Notes` | no | Decisiones técnicas relevantes del flujo que no encajan en ningún paso concreto |
 
@@ -146,40 +178,39 @@ modules:
 
 ## Cómo escribir buenos `## Steps`
 
-Los pasos deben contar la historia completa del proceso. Un buen conjunto de pasos responde a estas preguntas:
+Los pasos deben contar la historia completa del proceso. Usa el prefijo de referencia para indicar qué parte del sistema ejecuta cada paso. Un buen conjunto de pasos responde a estas preguntas:
 
-- ¿Qué hace el usuario para iniciar el flujo?
-- ¿Qué valida el frontend antes de llamar al backend?
-- ¿Qué llamada API realiza el frontend?
-- ¿Qué hace el backend con esa llamada?
-- ¿Qué devuelve el backend?
-- ¿Cómo procesa el frontend la respuesta?
-- ¿Cuál es el estado final visible para el usuario?
+- ¿Qué hace el usuario para iniciar el flujo? → `[screen:...]`
+- ¿Qué valida el frontend antes de llamar al backend? → `[frontend:...]`
+- ¿Qué llamada API realiza el frontend? → `[frontend:...]`
+- ¿Qué hace el backend con esa llamada? → `[backend:...]`
+- ¿Qué lee o escribe en la base de datos? → `[database:...]`
+- ¿Qué devuelve el backend y cómo lo procesa el frontend? → `[frontend:...]`
+- ¿Cuál es el estado final visible para el usuario? → `[screen:...]`
 
 **Ejemplo de pasos demasiado vagos (evitar):**
 
 ```markdown
 ## Steps
-1. User logs in
-2. Backend validates
-3. User is redirected
+- User logs in
+- Backend validates
+- User is redirected
 ```
 
-**Ejemplo de pasos bien detallados:**
+**Ejemplo de pasos bien detallados con prefijos:**
 
 ```markdown
 ## Steps
-1. User enters username and password on the login screen and clicks submit
-2. handleLogin() validates that both fields are non-empty
-3. handleLogin() calls POST /auth/login with { username, password }
-4. login() queries the users table for a user with that username
-5. login() compares the submitted password against the stored hash
-6. login() creates a session record and returns a signed JWT token
-7. handleLogin() saves the token to localStorage under auth_token
-8. handleLogin() navigates to the dashboard screen
+- [screen:login] El usuario introduce usuario y contraseña y pulsa submit
+- [frontend:auth-frontend/LoginView.vue/handleLogin] Se validan los campos (no vacíos)
+- [frontend:auth-frontend/LoginView.vue/handleLogin] Se llama a POST /auth/login con { username, password }
+- [backend:auth-backend/auth.controller.ts/login] Se busca el usuario en la tabla users
+- [database:users] Se consulta el registro por nombre de usuario
+- [backend:auth-backend/auth.controller.ts/login] Se compara la contraseña con el hash almacenado
+- [backend:auth-backend/auth.service.ts/generateToken] Se genera un JWT firmado con HS256
+- [frontend:auth-frontend/LoginView.vue/handleLogin] Se guarda el token en localStorage y se navega al dashboard
+- [screen:dashboard] El usuario ve el dashboard
 ```
-
-Si se ha declarado el formato detallado de `modules`, es buena práctica mencionar las funciones concretas en los pasos (como en el ejemplo).
 
 ---
 
@@ -193,14 +224,18 @@ Si se ha declarado el formato detallado de `modules`, es buena práctica mencion
 | `modules[].file` | Lista `files` dentro del módulo referenciado |
 | `modules[].functions` | Sección `## Functions` dentro del archivo referenciado |
 | `database` | `project-docs/database/{id}-database.md` |
-
-El parser detecta si un módulo es de backend o frontend por el sufijo de su ID. Por eso es importante que los IDs de módulos sigan el patrón `nombre-backend` o `nombre-frontend`.
+| Prefijo `[screen:id]` en steps | ID de una pantalla definida en `screens/` |
+| Prefijo `[frontend:id/...]` en steps | ID de un módulo frontend definido en `modules/frontend/` |
+| Prefijo `[backend:id/...]` en steps | ID de un módulo backend definido en `modules/backend/` |
+| Prefijo `[database:id]` en steps | ID de una entidad definida en `database/` |
 
 ---
 
 ## Ejemplos según nivel de detalle
 
-### Mínimo (solo campos obligatorios)
+### Mínimo (solo campos obligatorios, sin prefijos en steps)
+
+Compatible con el formato antiguo. Los pasos aparecen en el panel como texto simple pero no generan edges ni chips en nodos.
 
 ```markdown
 ---
@@ -212,13 +247,15 @@ trigger: user submits login form
 ---
 
 ## Steps
-1. User enters username and password on the login screen
-2. Frontend validates the form and calls the login API
-3. Backend validates credentials and returns a session token
-4. Frontend redirects the user to the dashboard
+- User enters username and password on the login screen
+- Frontend validates the form and calls the login API
+- Backend validates credentials and returns a session token
+- Frontend redirects the user to the dashboard
 ```
 
-### Medio (con referencias a pantallas, módulos y base de datos)
+### Medio (prefijos de capa sin detalle de archivo ni función)
+
+Los nodos relevantes muestran el chip del flujo y se generan edges entre capas distintas.
 
 ```markdown
 ---
@@ -233,18 +270,21 @@ database: [users]
 ---
 
 ## Steps
-1. User enters username and password on the login screen
-2. Frontend calls POST /auth/login with the credentials
-3. Backend validates credentials against the users table
-4. Backend generates and returns a session token
-5. Frontend stores the token and redirects to dashboard
+- [screen:login] El usuario introduce sus credenciales
+- [frontend:auth-frontend] Se llama a POST /auth/login con las credenciales
+- [backend:auth-backend] Se validan las credenciales contra la tabla users
+- [database:users] Se consulta el usuario en base de datos
+- [backend:auth-backend] Se genera y devuelve el token de sesión
+- [screen:dashboard] Se almacena el token y se redirige al dashboard
 
 ## Error Cases
 - Invalid credentials: show error message on login screen
 - Server error: show generic error and stay on login screen
 ```
 
-### Completo (con detalle de archivos y funciones en cada módulo)
+### Completo (con detalle de archivo y función en cada paso)
+
+Máxima granularidad. El panel lateral muestra archivo y función en cada paso.
 
 ```markdown
 ---
@@ -265,14 +305,14 @@ database: [users]
 ---
 
 ## Steps
-1. User enters username and password on the login screen and submits the form
-2. handleLogin() validates that both fields are non-empty before calling the API
-3. handleLogin() calls POST /auth/login with { username, password }
-4. login() queries the users table to find the user by username
-5. login() compares the submitted password against the stored bcrypt hash
-6. login() generates a signed JWT token and returns it with status 200
-7. handleLogin() stores the token in localStorage under auth_token
-8. handleLogin() navigates to the dashboard screen
+- [screen:login] El usuario introduce usuario y contraseña y pulsa submit
+- [frontend:auth-frontend/LoginView.vue/handleLogin] Se validan los campos y se llama a POST /auth/login
+- [backend:auth-backend/auth.controller.ts/login] Se busca el usuario en la tabla users
+- [database:users] Se consulta el registro por nombre de usuario
+- [backend:auth-backend/auth.controller.ts/login] Se compara la contraseña con el hash almacenado
+- [backend:auth-backend/auth.service.ts/generateToken] Se genera un JWT firmado con HS256
+- [frontend:auth-frontend/LoginView.vue/handleLogin] Se guarda el token en localStorage y se navega al dashboard
+- [screen:dashboard] El usuario ve el dashboard
 
 ## Error Cases
 - Empty fields: handleLogin() shows inline validation errors without calling the API
@@ -287,6 +327,8 @@ Tokens expire after 24 hours. The frontend checks token validity on each page lo
 
 ## Preguntas para extraer la información del usuario
 
+Haz estas preguntas **solo después** de tener definidos módulos, base de datos y pantallas, ya que los prefijos de los pasos dependen de esos IDs.
+
 1. ¿Qué procesos importantes tiene la aplicación que involucren varios pasos o varias partes del sistema?
 2. Para cada flujo identificado:
    - ¿Cómo se llama el proceso y qué hace?
@@ -295,6 +337,7 @@ Tokens expire after 24 hours. The frontend checks token validity on each page lo
    - ¿Qué módulos participan (frontend y backend)?
    - ¿Qué datos lee o modifica en la base de datos?
    - Describe los pasos del proceso desde el inicio hasta el final
+   - Para cada paso: ¿en qué capa ocurre y en qué archivo/función concretos, si lo sabes?
    - ¿Qué puede salir mal? ¿Cómo se gestiona cada error?
 
 ---
@@ -307,4 +350,6 @@ Tokens expire after 24 hours. The frontend checks token validity on each page lo
 | `[archivo] falta el campo requerido "description"` | Se omitió la descripción breve | Añade `description:` con una línea que resuma el flujo |
 | Referencia rota en `modules[].id` | El ID no coincide con el sufijo del módulo | Verifica que el ID termina en `-backend` o `-frontend` |
 | Referencia rota en `modules[].file` | El ID del archivo no existe en el módulo | El módulo debe tener ese `id` declarado en su campo `files` |
-| La sección `## Steps` no produce pasos | Se escribió como párrafo en lugar de lista | Usa lista numerada (`1.`, `2.`) o lista de puntos (`-`) |
+| La sección `## Steps` no produce pasos | Se escribió como párrafo en lugar de lista | Usa lista de puntos (`-`) |
+| Prefijo `[capa:id]` no genera chip ni edge | El ID del prefijo no coincide con ningún elemento definido | Verifica que el ID existe en la capa correspondiente (módulo, pantalla o tabla) |
+| Prefijo con capa inválida | Se usó una capa que no es `screen`, `frontend`, `backend` ni `database` | Corrige la capa al valor correcto |

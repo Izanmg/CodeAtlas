@@ -26,10 +26,11 @@ const sizeClasses = computed(() => ({
 }[props.size]))
 
 const variantClasses = computed(() => ({
-  primary: 'bg-accent hover:bg-accent-hover text-accent-fg border border-accent shadow-xs',
-  secondary: 'bg-surface hover:bg-bg-muted text-fg border border-border shadow-xs',
-  ghost: 'bg-transparent hover:bg-bg-muted text-fg-muted hover:text-fg border border-transparent',
-  danger: 'bg-surface hover:bg-danger-bg text-danger border border-border hover:border-danger',
+  primary:       'bg-accent hover:bg-accent-hover text-accent-fg border border-accent shadow-xs',
+  secondary:     'bg-surface hover:bg-bg-muted text-fg border border-border shadow-xs',
+  ghost:         'bg-transparent hover:bg-bg-muted text-fg-muted hover:text-fg border border-transparent',
+  danger:        'bg-surface hover:bg-danger-bg text-danger border border-border hover:border-danger',
+  'danger-solid': '[background:var(--danger)] hover:opacity-90 text-white [border-color:var(--danger)] border shadow-xs',
 }[props.variant]))
 </script>
 

@@ -3,32 +3,30 @@ type: module
 layer: frontend
 id: dashboard-frontend
 name: Dashboard
-description: Vista de inicio que muestra un resumen global de proyectos y diagramas recientes del usuario autenticado
+description: Pantalla de inicio con listado de proyectos y diagramas recientes
 screens: [dashboard]
-consumes-api: []
-depends-on: [auth-frontend, projects-frontend, diagrams-frontend]
+consumes-api: [projects-backend, diagrams-backend]
+depends-on: [projects-frontend, diagrams-frontend]
 folders:
-  - id: dashboard-views
+  - id: views
     path: src/modules/dashboard/views
 files:
   - id: dashboard-view
-    folder: dashboard-views
+    folder: views
     path: DashboardView.vue
     type: view
 ---
 
 ## Purpose
-
-Pantalla raíz de la aplicación (ruta `/`). Agrega información de los stores de proyectos y diagramas para mostrar un resumen en cuadrículas: proyectos recientes y diagramas recientes. Sirve como punto de navegación central hacia el detalle de proyectos y el canvas de diagramas.
-
-## State
-
-Utiliza los stores de `projects-frontend` y `diagrams-frontend` directamente. No tiene estado propio.
+Pantalla de inicio tras el login. Muestra los proyectos del usuario y los diagramas recientes en dos columnas. No tiene store ni servicio propios: consume directamente `useProjectsStore()` y `useDiagramsStore()` para listar y crear contenido.
 
 ## Functions
 
 ### dashboard-view
-- onMounted() — carga proyectos y diagramas recientes
-- goToProject(id)
-- goToDiagram(id)
-- goToNewProject()
+- onMounted: dispara projectsStore.fetchAll() y diagramsStore.fetchAll()
+- handleCreateProject(payload)
+- goToProject(projectId)
+- goToDiagram(diagramId)
+
+## Notes
+Es un módulo "fino": una sola vista que orquesta los stores existentes. Si en el futuro se añaden widgets propios del dashboard (estadísticas, accesos rápidos), tendría sentido extraer un store o un service específico.

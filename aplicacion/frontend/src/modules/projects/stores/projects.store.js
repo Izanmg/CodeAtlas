@@ -38,5 +38,16 @@ export const useProjectsStore = defineStore('projects', () => {
     return updated
   }
 
-  return { projects, loading, loaded, fetchAll, fetchById, create, bumpDiagramCount }
+  async function update(id, patch) {
+    const project = await projectsApi.update(id, patch)
+    projects.value = projects.value.map((p) => (p.id === id ? project : p))
+    return project
+  }
+
+  async function remove(id) {
+    await projectsApi.remove(id)
+    projects.value = projects.value.filter((p) => p.id !== id)
+  }
+
+  return { projects, loading, loaded, fetchAll, fetchById, create, bumpDiagramCount, update, remove }
 })

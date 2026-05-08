@@ -36,6 +36,52 @@ const ruleGroups = computed(() => [
   { label: 'Navegación', items: props.m.navigation },
   { label: 'Convenciones', items: props.m.conventions },
 ])
+
+// Parsea el bloque DBML de m.table cuando m.fields no está disponible
+// (diagramas generados antes del fix del parser)
+function parseDbmlFields(tableText) {
+  if (!tableText) return []
+  const content = tableText.replace(/```\w*\n?/g, '')
+  const tableMatch = content.match(/Table\s+(\w+)\s*\{([^}]+)\}/)
+  if (!tableMatch) return []
+  const tableName = tableMatch[1]
+  const bodyText = tableMatch[2]
+  const prefix = tableName + '.'
+  const fkFields = new Set()
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed.startsWith('Ref:')) continue
+    const m = trimmed.slice(4).trim().match(/^(\S+)\s*([><-]|<>)\s*(\S+)/)
+    if (!m) continue
+    const [, left, op, right] = m
+    if (op === '>') {
+      if (left.startsWith(prefix)) fkFields.add(left.slice(prefix.length))
+    } else if (op === '<') {
+      if (right.startsWith(prefix)) fkFields.add(right.slice(prefix.length))
+    } else if (op === '-') {
+      if (left.startsWith(prefix)) { const f = left.slice(prefix.length); if (f !== 'id') fkFields.add(f) }
+      if (right.startsWith(prefix)) { const f = right.slice(prefix.length); if (f !== 'id') fkFields.add(f) }
+    }
+  }
+  const fields = []
+  for (const line of bodyText.split('\n')) {
+    const m = line.trim().match(/^(\w+)\s+(\w+)(?:\s+\[([^\]]*)\])?/)
+    if (!m) continue
+    const [, name, type, mods = ''] = m
+    const modsLower = mods.toLowerCase()
+    fields.push({
+      name, type,
+      pk: modsLower.includes('pk'),
+      fk: modsLower.includes('ref:') || fkFields.has(name),
+      unique: modsLower.includes('unique'),
+    })
+  }
+  return fields
+}
+
+const dbFields = computed(() =>
+  props.m.fields?.length ? props.m.fields : parseDbmlFields(props.m.table)
+)
 </script>
 
 <template>
@@ -85,17 +131,21 @@ const ruleGroups = computed(() => [
 
     <!-- screen -->
     <template v-if="kind === 'screen'">
-      <div>
-        <PanelSectionHeader>Ruta</PanelSectionHeader>
-        <div
-          class="font-mono text-fg rounded"
-          :style="{
-            fontSize: '11.5px',
-            padding: '5px 9px',
-            background: 'var(--bg-subtle)',
-            border: '1px solid var(--border-subtle)',
-          }"
-        >{{ m.route }}</div>
+      <div v-if="m.routes?.length">
+        <PanelSectionHeader :count="m.routes.length > 1 ? m.routes.length : undefined">Ruta</PanelSectionHeader>
+        <div class="flex flex-col" style="gap: 3px;">
+          <div
+            v-for="(r, i) in m.routes"
+            :key="i"
+            class="font-mono text-fg rounded"
+            :style="{
+              fontSize: '11.5px',
+              padding: '5px 9px',
+              background: 'var(--bg-subtle)',
+              border: '1px solid var(--border-subtle)',
+            }"
+          >{{ r }}</div>
+        </div>
       </div>
       <div>
         <PanelSectionHeader>Autenticación</PanelSectionHeader>
@@ -105,12 +155,28 @@ const ruleGroups = computed(() => [
           {{ m.requiresAuth ? 'Requiere login' : 'Pública' }}
         </Badge>
       </div>
+      <div v-if="m.components?.length">
+        <PanelSectionHeader :count="m.components.length">Componentes</PanelSectionHeader>
+        <div class="flex flex-col" style="gap: 3px;">
+          <div
+            v-for="(c, i) in m.components"
+            :key="i"
+            class="font-mono text-fg rounded"
+            :style="{
+              fontSize: '11.5px',
+              padding: '5px 9px',
+              background: 'var(--bg-subtle)',
+              border: '1px solid var(--border-subtle)',
+            }"
+          >{{ c }}</div>
+        </div>
+      </div>
     </template>
 
     <!-- database -->
     <template v-if="kind === 'database'">
       <div>
-        <PanelSectionHeader :count="m.fields.length">Esquema</PanelSectionHeader>
+        <PanelSectionHeader :count="dbFields.length">Esquema</PanelSectionHeader>
         <table class="w-full font-mono" style="border-collapse: collapse; font-size: 11.5px;">
           <thead>
             <tr style="border-bottom: 1px solid var(--border);">
@@ -120,7 +186,7 @@ const ruleGroups = computed(() => [
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(f, i) in m.fields" :key="i" style="border-bottom: 1px solid var(--border-subtle);">
+            <tr v-for="(f, i) in dbFields" :key="i" style="border-bottom: 1px solid var(--border-subtle);">
               <td class="text-fg" :style="{ padding: '6px 0', fontWeight: f.pk ? 600 : 400 }">
                 <span v-if="f.pk" class="text-accent" style="margin-right: 4px;">★</span>
                 {{ f.name }}

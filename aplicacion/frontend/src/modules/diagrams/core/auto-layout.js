@@ -71,16 +71,9 @@ export function autoLayout({ model, layout = {} }) {
     })
   })
 
-  // Flujos: bajo la columna de backends (fallback).
-  const backendBottom = TOP + model.modules.backend.length * 220
-  model.flows.forEach((f, i) => {
-    nodes.push({
-      id: `flow-${f.id}`,
-      type: 'flow',
-      position: pos(f.id, { x: COL_X.flow, y: backendBottom + 60 + i * 140 }),
-      data: { ...f, kind: 'flow', _model: f },
-    })
-  })
+  // Los flujos ya no se renderizan como nodos del canvas: se incrustan como
+  // chips dentro de los demás nodos a través del campo `flowChips` que el
+  // canvas inyecta en `data` durante la construcción de la vista.
 
   // Frontends (columna 3).
   model.modules.frontend.forEach((m, i) => {
@@ -137,6 +130,7 @@ export function autoLayout({ model, layout = {} }) {
       'navigates':       { stroke: 'var(--kind-screen)',   strokeWidth: 1,   strokeOpacity: 0.4, strokeDasharray: '2 4' },
       'backend-dep':     { stroke: 'var(--kind-backend)',  strokeWidth: 1.2, strokeOpacity: 0.55, strokeDasharray: '4 3' },
       'frontend-dep':    { stroke: 'var(--kind-frontend)', strokeWidth: 1.1, strokeOpacity: 0.45, strokeDasharray: '4 3' },
+      'db-rel':          { stroke: 'var(--kind-database)', strokeWidth: 1.4, strokeOpacity: 0.85 },
     }
     return map[kind] ?? {}
   }
@@ -148,7 +142,7 @@ export function autoLayout({ model, layout = {} }) {
         id: `e-bd-${m.id}-${target}`,
         source: `mod-${m.id}`,
         target: `mod-${target}`,
-        type: 'smoothstep',
+        type: 'floating',
         style: edgeStyle('backend-dep'),
         data: { kind: 'backend-dep' },
       })
@@ -162,7 +156,7 @@ export function autoLayout({ model, layout = {} }) {
         id: `e-fd-${m.id}-${target}`,
         source: `mod-${m.id}`,
         target: `mod-${target}`,
-        type: 'smoothstep',
+        type: 'floating',
         style: edgeStyle('frontend-dep'),
         data: { kind: 'frontend-dep' },
       })
@@ -174,9 +168,9 @@ export function autoLayout({ model, layout = {} }) {
     ;(m.consumesApi || []).forEach((target) => {
       edges.push({
         id: `e-${m.id}-${target}`,
-        source: `mod-${m.id}`, sourceHandle: 'l',
-        target: `mod-${target}`, targetHandle: 'r',
-        type: 'smoothstep',
+        source: `mod-${m.id}`,
+        target: `mod-${target}`,
+        type: 'floating',
         style: edgeStyle('consumes'),
         data: { kind: 'consumes' },
       })
@@ -188,9 +182,9 @@ export function autoLayout({ model, layout = {} }) {
     ;(m.database || []).forEach((tableId) => {
       edges.push({
         id: `e-${m.id}-${tableId}`,
-        source: `mod-${m.id}`, sourceHandle: 'l',
-        target: `db-${tableId}`, targetHandle: 'r',
-        type: 'smoothstep',
+        source: `mod-${m.id}`,
+        target: `db-${tableId}`,
+        type: 'floating',
         style: edgeStyle('uses-db'),
         data: { kind: 'uses-db' },
       })
@@ -202,9 +196,9 @@ export function autoLayout({ model, layout = {} }) {
     ;(m.screens || []).forEach((scrId) => {
       edges.push({
         id: `e-${m.id}-scr-${scrId}`,
-        source: `mod-${m.id}`, sourceHandle: 'r',
-        target: `scr-${scrId}`, targetHandle: 'l',
-        type: 'smoothstep',
+        source: `mod-${m.id}`,
+        target: `scr-${scrId}`,
+        type: 'floating',
         style: edgeStyle('contains-screen'),
         data: { kind: 'contains-screen' },
       })
@@ -218,9 +212,31 @@ export function autoLayout({ model, layout = {} }) {
         id: `e-nav-${s.id}-${target}`,
         source: `scr-${s.id}`,
         target: `scr-${target}`,
-        type: 'smoothstep',
+        type: 'floating',
         style: edgeStyle('navigates'),
         data: { kind: 'navigates' },
+      })
+    })
+  })
+
+  // Database → database (FK / relations).
+  // Deduplica por par no ordenado: si A declara una relación con B y B
+  // declara la inversa, solo se pinta una arista.
+  const dbPairs = new Set()
+  const dbIds = new Set(model.database.map((e) => e.id))
+  model.database.forEach((e) => {
+    ;(e.relations || []).forEach((rel) => {
+      if (!rel?.target || !dbIds.has(rel.target)) return
+      const pair = [e.id, rel.target].sort().join('::')
+      if (dbPairs.has(pair)) return
+      dbPairs.add(pair)
+      edges.push({
+        id: `e-rel-${e.id}-${rel.target}`,
+        source: `db-${e.id}`,
+        target: `db-${rel.target}`,
+        type: 'floating',
+        style: edgeStyle('db-rel'),
+        data: { kind: 'db-rel', relType: rel.type },
       })
     })
   })

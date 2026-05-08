@@ -26,7 +26,7 @@ import { Plus, Upload, Network, AlertCircle, Folder } from 'lucide-vue-next'
 const route = useRoute()
 const router = useRouter()
 const projectsStore = useProjectsStore()
-const diagramsStore = useDiagramsStore()
+const diagramsStore  = useDiagramsStore()
 
 const project = ref(null)
 const diagrams = ref([])
@@ -48,6 +48,16 @@ const breadcrumbs = computed(() => [
 
 function newDiagram() {
   router.push(`/projects/${project.value.id}/diagrams/new`)
+}
+
+async function deleteDiagram(id) {
+  await diagramsStore.remove(id)
+  diagrams.value = diagrams.value.filter((d) => d.id !== id)
+  await projectsStore.bumpDiagramCount(project.value.id)
+}
+
+function updateDiagram(updated) {
+  diagrams.value = diagrams.value.map((d) => d.id === updated.id ? updated : d)
 }
 </script>
 
@@ -122,6 +132,8 @@ function newDiagram() {
           v-for="d in diagrams"
           :key="d.id"
           :diagram="d"
+          @deleted="deleteDiagram"
+          @updated="updateDiagram"
         />
       </div>
     </div>

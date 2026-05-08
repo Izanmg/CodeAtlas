@@ -5,9 +5,8 @@ export async function getAll(userId) {
 }
 
 export async function getById(id, userId) {
-  const project = await repo.findById(id)
+  const project = await repo.findById(id, userId)
   if (!project) throw new Error('Proyecto no encontrado')
-  if (project.user_id !== userId) throw new Error('No tienes acceso a este proyecto')
   return project
 }
 
@@ -17,11 +16,14 @@ export async function create(userId, { name, description }) {
 }
 
 export async function update(id, userId, patch) {
-  await getById(id, userId)
-  return repo.update(id, patch)
+  const updated = await repo.update(id, userId, patch)
+  if (!updated) throw new Error('Proyecto no encontrado')
+  return updated
 }
 
 export async function remove(id, userId) {
-  await getById(id, userId)
-  await repo.remove(id)
+  const project = await getById(id, userId)
+  if (Number(project.diagram_count) > 0)
+    throw new Error('El proyecto tiene diagramas. Bórralos primero.')
+  await repo.remove(id, userId)
 }

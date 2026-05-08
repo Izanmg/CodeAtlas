@@ -13,6 +13,7 @@
 import { computed } from 'vue'
 import NodeShell from './NodeShell.vue'
 import NodeHandles from './NodeHandles.vue'
+import NodeFlowChips from './NodeFlowChips.vue'
 
 defineOptions({ inheritAttrs: false })
 
@@ -20,6 +21,10 @@ const props = defineProps({
   data: { type: Object, required: true },
   selected: { type: Boolean, default: false },
 })
+
+function onPickFlow(payload) {
+  props.data._onPickFlow?.(payload)
+}
 
 const MAX = 5
 const screens = computed(() => props.data.screens || [])
@@ -82,5 +87,6 @@ function screenInfo(id) {
         borderTop: '1px solid var(--border-subtle)',
       }"
     >+ {{ rest }} más</div>
+    <NodeFlowChips :chips="data.flowChips || []" @pick-flow="onPickFlow" />
   </NodeShell>
 </template>

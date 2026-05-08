@@ -2,165 +2,190 @@
 type: module
 layer: frontend
 id: diagrams-frontend
-name: Diagrams
-description: Canvas interactivo de visualización de arquitectura con Vue Flow — seis tipos de nodo, filtros, modo foco, side panel de detalle y generación de diagramas por subida de archivos .md
-screens: [diagram-view, diagram-new]
-consumes-api: [parser-backend]
-depends-on: [auth-frontend, projects-frontend]
+name: Diagramas
+description: Generación de diagramas, canvas Vue Flow, modos Relaciones/Flujos
+screens: [diagram-new, diagram-view]
+consumes-api: [diagrams-backend]
+depends-on: [projects-frontend]
 folders:
-  - id: diagrams-views
+  - id: views
     path: src/modules/diagrams/views
-  - id: diagrams-components
+  - id: components
     path: src/modules/diagrams/components
-  - id: diagrams-nodes
+  - id: nodes
     path: src/modules/diagrams/components/nodes
-  - id: diagrams-panel
+  - id: panel
     path: src/modules/diagrams/components/panel
-  - id: diagrams-stores
+  - id: stores
     path: src/modules/diagrams/stores
-  - id: diagrams-core
+  - id: services
+    path: src/modules/diagrams/services
+  - id: core
     path: src/modules/diagrams/core
-  - id: diagrams-mock
-    path: src/modules/diagrams/logica-temporal
 files:
-  - id: diagram-view-file
-    folder: diagrams-views
-    path: DiagramView.vue
-    type: view
   - id: diagram-new-view
-    folder: diagrams-views
+    folder: views
     path: DiagramNewView.vue
     type: view
+  - id: diagram-view
+    folder: views
+    path: DiagramView.vue
+    type: view
   - id: canvas-toolbar
-    folder: diagrams-components
+    folder: components
     path: CanvasToolbar.vue
     type: component
   - id: canvas-legend
-    folder: diagrams-components
+    folder: components
     path: CanvasLegend.vue
     type: component
+  - id: canvas-rules
+    folder: components
+    path: CanvasRules.vue
+    type: component
+  - id: canvas-flow-selector
+    folder: components
+    path: CanvasFlowSelector.vue
+    type: component
+  - id: canvas-flow-panel
+    folder: components
+    path: CanvasFlowPanel.vue
+    type: component
   - id: side-panel
-    folder: diagrams-components
+    folder: components
     path: SidePanel.vue
     type: component
   - id: backend-node
-    folder: diagrams-nodes
+    folder: nodes
     path: BackendNode.vue
     type: component
   - id: frontend-node
-    folder: diagrams-nodes
+    folder: nodes
     path: FrontendNode.vue
     type: component
   - id: screen-node
-    folder: diagrams-nodes
+    folder: nodes
     path: ScreenNode.vue
     type: component
   - id: database-node
-    folder: diagrams-nodes
+    folder: nodes
     path: DatabaseNode.vue
     type: component
-  - id: flow-node
-    folder: diagrams-nodes
-    path: FlowNode.vue
-    type: component
   - id: rules-node
-    folder: diagrams-nodes
+    folder: nodes
     path: RulesNode.vue
     type: component
-  - id: overview-tab
-    folder: diagrams-panel
-    path: OverviewTab.vue
+  - id: node-shell
+    folder: nodes
+    path: NodeShell.vue
     type: component
-  - id: connections-tab
-    folder: diagrams-panel
-    path: ConnectionsTab.vue
+  - id: node-handles
+    folder: nodes
+    path: NodeHandles.vue
+    type: component
+  - id: node-flow-chips
+    folder: nodes
+    path: NodeFlowChips.vue
     type: component
   - id: details-tab
-    folder: diagrams-panel
+    folder: panel
     path: DetailsTab.vue
     type: component
-  - id: connection-row
-    folder: diagrams-panel
-    path: ConnectionRow.vue
+  - id: connections-tab
+    folder: panel
+    path: ConnectionsTab.vue
+    type: component
+  - id: overview-tab
+    folder: panel
+    path: OverviewTab.vue
     type: component
   - id: diagrams-store
-    folder: diagrams-stores
+    folder: stores
     path: diagrams.store.js
     type: store
-  - id: node-meta
-    folder: diagrams-core
-    path: node-meta.js
-    type: helper
-  - id: compute-connections
-    folder: diagrams-core
-    path: compute-connections.js
-    type: helper
+  - id: diagrams-frontend-service
+    folder: services
+    path: diagrams.service.js
+    type: service
   - id: auto-layout
-    folder: diagrams-core
+    folder: core
     path: auto-layout.js
     type: helper
-  - id: diagrams-mock-file
-    folder: diagrams-mock
-    path: diagrams-mock.js
+  - id: compute-connections
+    folder: core
+    path: compute-connections.js
+    type: helper
+  - id: node-meta
+    folder: core
+    path: node-meta.js
     type: helper
 ---
 
 ## Purpose
-
-Módulo más complejo del frontend. Cubre dos flujos: la **creación** de un nuevo diagrama (subida de archivos `.md` al parser) y la **visualización** interactiva del resultado en un canvas Vue Flow.
-
-El canvas (`DiagramView`) renderiza seis tipos de nodo personalizados (backend, frontend, screen, database, flow, rules), cada uno con su shell visual (`NodeShell`) y contenido específico del modelo. El usuario puede:
-
-- **Modo foco**: clic en un nodo resalta sus vecinos directos y atenúa el resto
-- **Filtros**: activar/desactivar tipos de nodo y sus edges asociados
-- **Side panel**: tres pestañas (Resumen, Conexiones, Detalle) sobre el nodo seleccionado
-- **Minimap**: visión global del canvas, con colores por tipo de nodo
-- **Leyenda**: lista de tipos de bloque y estilos de conexión (expandible/colapsable)
-
-La lógica de dominio permanente vive en `core/`:
-- `node-meta.js` — icono, color y label de cada tipo de nodo
-- `compute-connections.js` — calcula las conexiones entrantes/salientes de un nodo a partir del modelo
-- `auto-layout.js` — transforma el modelo JSON en nodos y edges de Vue Flow con posiciones por defecto
-
-La capa `logica-temporal/diagrams-mock.js` simula el backend (CRUD de diagramas y llamada al parser). Cuando se conecte el backend real, solo cambia este archivo.
+Es el módulo más grande del frontend. Cubre dos vistas distintas: la de generación (`DiagramNewView`, donde el usuario sube los `.md` y arranca el parseo) y la del canvas interactivo (`DiagramView`, donde se renderiza el diagrama con Vue Flow). Incluye los nodos personalizados de cada tipo (backend, frontend, screen, database, rules), el SidePanel con sus tres tabs, y los dos paneles flotantes del modo flujos (`CanvasFlowSelector` a la derecha, `CanvasFlowPanel` a la izquierda).
 
 ## State
-
-- all (lista global de diagramas)
+- all
 - loaded
-- current (diagrama actualmente abierto)
+- current
 
 ## Functions
+
+### diagram-new-view
+- handleFilesSelected(files)
+- handleGenerate()
+- onProgress({ progress, label })
+
+### diagram-view
+- onMounted: carga el diagrama, construye nodes/edges con autoLayout, pinta el canvas
+- handleNodesChange(changes)
+- saveLayout()
+- undo() / redo()
+- setMode(next) / handlePickFlow({ flowId })
+- onNodeClick / onPaneClick / clearFocus
+
+### canvas-toolbar
+- emite 'mode' al cambiar entre Relaciones y Flujos
+- emite 'toggle' al activar/desactivar un filtro de tipo
+
+### canvas-flow-selector
+- emite 'select' con el flowId al elegir un flujo
+
+### canvas-flow-panel
+- agrupa pasos consecutivos del mismo nodeId
+- resalta los pasos del nodo actualmente seleccionado
+
+### node-flow-chips
+- emite 'pick-flow' al hacer click en un chip de flujo
 
 ### diagrams-store
 - fetchAll(force)
 - fetchByProject(projectId)
 - fetchById(id)
 - generate(payload, onProgress)
+- saveLayout(id, layout)
+- remove(id)
+
+### diagrams-frontend-service
+- fetchAll()
+- fetchByProject(projectId)
+- fetchById(id)
+- generate({ projectId, name, files }, onProgress)
+- saveLayout(id, layout)
+- remove(id)
 
 ### auto-layout
-- autoLayout(modelData)
+- autoLayout({ model, layout })
 
 ### compute-connections
 - computeConnections(node, model)
 
 ### node-meta
-- NODE_META (objeto con metadatos por tipo)
-- KIND_KEYS (lista de tipos)
-
-### diagram-view-file
-- onMounted() — carga diagrama por id de URL, construye nodos y edges
-- onNodeClick(event)
-- onPaneClick()
-- clearFocus()
-- toggleFilter(kind)
-- goBack()
-- colorFor(node)
+- NODE_META por tipo (label, icon, color, bg)
+- KIND_KEYS para los filtros del toolbar
 
 ## Notes
-
-`auto-layout.js` vive en `core/` aunque parte de su lógica (las posiciones de los nodos) será temporal cuando el backend empiece a enviar coordenadas propias. La derivación de edges a partir del modelo es permanente y justifica que el archivo esté en `core/`.
-
-`DiagramView` inyecta `_allScreens` en los nodos de tipo `frontend` para que `FrontendNode` pueda resolver los nombres de las pantallas que contiene, sin que el store o el builder lo necesiten conocer.
-
-El guard de la ruta `requiresAuth: true` redirige al login si no hay sesión antes de cargar el canvas.
+Vue Flow se usa en modo controlado: el componente `DiagramView` mantiene `nodes` y `edges` como `ref()` y aplica los cambios manualmente desde `@nodes-change` (el helper estándar `applyNodeChanges` no funciona porque solo muta GraphNode internos).
+Los flujos no se renderizan como nodos del canvas. El parser deja `model.flows` con los pasos enriquecidos (cada step lleva `nodeId`); el canvas inyecta en cada nodo un campo `flowChips` con los flujos que lo tocan, que se renderiza vía `NodeFlowChips`.
+Hay dos modos: `relations` (edges coloreados por tipo, filtros de tipo activos, `CanvasRules` a la izquierda) y `flows` (edges amarillos del flujo activo, `CanvasFlowSelector` a la derecha, `CanvasFlowPanel` a la izquierda con los pasos secuenciales).
+El historial de undo/redo guarda snapshots de posiciones de nodos. Hay un modal de "salir sin guardar" que intercepta la navegación cuando hay cambios sin persistir.

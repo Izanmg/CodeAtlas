@@ -1,41 +1,50 @@
 ---
 type: modules-index
 backend:
+  - id: auth-backend
+    name: Autenticación
+  - id: projects-backend
+    name: Proyectos
+  - id: diagrams-backend
+    name: Diagramas
   - id: parser-backend
-    name: Parser
+    name: Parser de documentación
+  - id: settings-backend
+    name: Ajustes de usuario
 frontend:
   - id: auth-frontend
-    name: Auth
+    name: Pantallas de autenticación
   - id: dashboard-frontend
     name: Dashboard
   - id: projects-frontend
-    name: Projects
+    name: Proyectos
   - id: diagrams-frontend
-    name: Diagrams
+    name: Diagramas
   - id: settings-frontend
-    name: Settings
+    name: Ajustes
 file-types:
   backend:
     - controller
     - service
     - repository
+    - middleware
     - router
     - helper
-    - config
     - source
+    - core
   frontend:
     - view
     - component
     - store
+    - service
     - composable
     - helper
     - router
 ---
 
 ## Overview
+CodeAtlas se organiza en módulos por responsabilidad funcional, siguiendo una arquitectura modular tanto en backend como en frontend. Cada módulo vive en su propia carpeta `src/modules/<nombre>/`.
 
-CodeAtlas es una herramienta que lee archivos `.md` de documentación de una app y genera diagramas visuales interactivos de su arquitectura. La aplicación está dividida en backend (Node.js + Express) y frontend (Vue 3 + Vite + Pinia).
+El backend (Express + MySQL) expone una API REST bajo el prefijo `/api`. Cada módulo agrupa sus rutas, controlador, servicio y repositorio. La autenticación se aplica como middleware (`requireAuth`) sobre las rutas que lo necesitan.
 
-El backend actualmente tiene un único módulo implementado: el **parser**, que recibe archivos `.md` por HTTP multipart, los procesa a través de un pipeline secuencial (extracción → validación → modelo → layout) y devuelve un modelo JSON con las coordenadas de cada nodo.
-
-El frontend tiene cinco módulos: **auth** (sesión), **dashboard** (vista de inicio), **projects** (gestión de proyectos), **diagrams** (canvas de visualización con Vue Flow) y **settings** (preferencias del usuario). Todos los módulos usan stores de Pinia que delegan a `logica-temporal/` — capas mock que serán sustituidas cuando se conecte el backend.
+El frontend (Vue 3 + Vite + Pinia) sigue el mismo patrón: cada módulo agrupa vistas, store y servicio HTTP. La comunicación con el backend pasa por un cliente HTTP centralizado en `src/lib/http.js` que inyecta el token JWT en cada petición.

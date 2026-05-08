@@ -1,34 +1,42 @@
 ---
 type: screen
 id: diagram-new
-name: New Diagram
-description: Asistente de creación de diagrama — el usuario sube los archivos .md de documentación, el parser los procesa y redirige al canvas resultante
+name: Nuevo diagrama
+description: Pantalla para subir archivos .md y generar un diagrama
 module: diagrams-frontend
+folder: views
+file: diagram-new-view
 requires-auth: true
+routes:
+  - /projects/:id/diagrams/new
+navigates-to: [diagram-view, project-detail]
+components:
+  - AppShell
+  - PageHeader
+  - Field
+  - Input
+  - Button
 ---
 
 ## Description
-
-Ruta `/projects/:id/diagrams/new`. Permite subir uno o varios archivos `.md` de documentación. Al confirmar, llama al store de diagramas (que llama al parser vía `logica-temporal/diagrams-mock.js`). Muestra progreso durante el procesamiento y redirige automáticamente al canvas (`/diagrams/:id`) al terminar.
+Permite al usuario subir uno o varios archivos `.md` siguiendo la estructura de CodeAtlas, ponerle nombre al diagrama y arrancar la generación. Muestra el progreso en tres fases (preparando archivos, analizando documentación, ¡diagrama generado!). Tras el éxito, redirige al canvas del diagrama recién creado.
 
 ## Elements
-
-- zona de drag-and-drop para subir archivos .md
-- lista de archivos seleccionados (con opción de eliminar)
+- input nombre del diagrama
+- zona de drop / botón de selección de archivos
+- listado de archivos seleccionados (con tamaño y opción de quitar uno)
+- barra de progreso durante la generación
+- mensaje de error si el parser rechaza algún archivo (con detalle por archivo)
 - botón Generar diagrama
-- indicador de progreso
-- botón Volver al proyecto
 
 ## Actions
-
-- upload-files
-- remove-file(index)
-- generate-diagram
-- go-back
+- select-files
+- remove-file
+- submit-generate
+- back-to-project
 
 ## States
-
-- idle (esperando archivos)
-- files-selected (al menos un archivo cargado)
-- processing (llamada al parser en curso)
-- error (el parser rechazó los archivos)
+- default
+- files-selected
+- generating
+- error

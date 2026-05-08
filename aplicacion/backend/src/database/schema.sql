@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS user_settings (
 
 CREATE TABLE IF NOT EXISTS diagrams (
   id             CHAR(36)     NOT NULL DEFAULT (UUID()),
+  user_id        CHAR(36)     NOT NULL,
   project_id     CHAR(36)     NOT NULL,
   name           VARCHAR(255) NOT NULL,
   description    TEXT,
@@ -41,7 +42,10 @@ CREATE TABLE IF NOT EXISTS diagrams (
   count_flows    SMALLINT     NOT NULL DEFAULT 0,
   created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+  INDEX idx_diagrams_user_id (user_id),
+  INDEX idx_diagrams_project_id (project_id)
 );
 
 -- Migración para bases de datos existentes:
@@ -49,3 +53,10 @@ CREATE TABLE IF NOT EXISTS diagrams (
 -- ALTER TABLE diagrams ADD COLUMN count_screens  SMALLINT NOT NULL DEFAULT 0;
 -- ALTER TABLE diagrams ADD COLUMN count_tables   SMALLINT NOT NULL DEFAULT 0;
 -- ALTER TABLE diagrams ADD COLUMN count_flows    SMALLINT NOT NULL DEFAULT 0;
+--
+-- Migración user_id en diagrams (poblar desde projects, luego añadir constraint):
+-- ALTER TABLE diagrams ADD COLUMN user_id CHAR(36) NULL AFTER id;
+-- UPDATE diagrams d JOIN projects p ON p.id = d.project_id SET d.user_id = p.user_id;
+-- ALTER TABLE diagrams MODIFY COLUMN user_id CHAR(36) NOT NULL;
+-- ALTER TABLE diagrams ADD CONSTRAINT fk_diagrams_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+-- ALTER TABLE diagrams ADD INDEX idx_diagrams_user_id (user_id);

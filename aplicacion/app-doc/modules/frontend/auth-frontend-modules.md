@@ -2,56 +2,62 @@
 type: module
 layer: frontend
 id: auth-frontend
-name: Auth
-description: Gestiona la sesión del usuario — login, registro, logout y actualización de perfil — con estado en Pinia y capa mock temporal en logica-temporal/
+name: Pantallas de autenticación
+description: Login, registro y gestión de sesión en el cliente
 screens: [login, register]
-consumes-api: []
+consumes-api: [auth-backend]
 depends-on: []
 folders:
-  - id: auth-views
+  - id: views
     path: src/modules/auth/views
-  - id: auth-stores
+  - id: components
+    path: src/modules/auth/components
+  - id: stores
     path: src/modules/auth/stores
-  - id: auth-mock
-    path: src/modules/auth/logica-temporal
+  - id: services
+    path: src/modules/auth/services
 files:
   - id: login-view
-    folder: auth-views
+    folder: views
     path: LoginView.vue
     type: view
   - id: register-view
-    folder: auth-views
+    folder: views
     path: RegisterView.vue
     type: view
+  - id: auth-shell
+    folder: components
+    path: AuthShell.vue
+    type: component
+  - id: auth-visual-side
+    folder: components
+    path: AuthVisualSide.vue
+    type: component
   - id: auth-store
-    folder: auth-stores
+    folder: stores
     path: auth.store.js
     type: store
-  - id: auth-mock-file
-    folder: auth-mock
-    path: auth-mock.js
-    type: helper
+  - id: auth-frontend-service
+    folder: services
+    path: auth.service.js
+    type: service
 ---
 
 ## Purpose
-
-Cubre las pantallas de entrada a la aplicación. Gestiona el estado de sesión global que otros módulos leen para decidir si el usuario está autenticado.
-
-El store mantiene `user` en memoria y delega todas las operaciones (login, register, logout, updateUser) al archivo `auth-mock.js`, que simula la API real. Cuando se conecte el backend, solo cambia `auth-mock.js`.
+Cubre las pantallas de entrada al sistema (login, registro) y mantiene el estado de sesión en el cliente. El store guarda el usuario autenticado y el token JWT en localStorage bajo la clave `codeatlas:auth`. Ningún otro módulo del frontend gestiona credenciales — todos consultan `useAuthStore()` para saber si hay sesión activa.
 
 ## State
-
 - user
-- isAuthenticated (computed)
+- isAuthenticated
 
 ## Functions
 
 ### login-view
-- handleLogin(credentials)
+- handleLogin()
 - goToRegister()
 
 ### register-view
-- handleRegister(payload)
+- handleRegister()
 - goToLogin()
 
 ### auth-store
@@ -59,16 +65,17 @@ El store mantiene `user` en memoria y delega todas las operaciones (login, regis
 - register(payload)
 - logout()
 - updateUser(patch)
+- changePassword(payload)
 
-### auth-mock-file
-- login(credentials)
-- register(payload)
+### auth-frontend-service
+- login({ email, password })
+- register({ name, email, password })
+- getCurrentUser()
 - logout()
 - updateUser(patch)
-- getCurrentUser()
+- changePassword(payload)
 
 ## Notes
-
-`isAuthenticated` es un computed derivado de `user !== null`. El router global lee este valor para proteger las rutas con `meta.requiresAuth`.
-
-La sesión se persiste en `logica-temporal/auth-mock.js` (localStorage o variable de módulo). Cuando se conecte el backend real, `auth-mock.js` se sustituye por una capa de fetch sin tocar el store ni las vistas.
+Tras un login o registro exitoso, el store de auth dispara también `useSettingsStore().load()` para sincronizar las preferencias del usuario; al cerrar sesión llama a `useSettingsStore().reset()` para limpiar las preferencias locales.
+El cliente HTTP (`src/lib/http.js`) lee el token desde `codeatlas:auth` y lo añade automáticamente a todas las peticiones como `Authorization: Bearer <token>`.
+Las iniciales del usuario (mostradas en el avatar del header) se calculan en el service a partir de las dos primeras palabras del nombre.

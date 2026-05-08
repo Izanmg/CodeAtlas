@@ -8,6 +8,7 @@
 import { computed } from 'vue'
 import NodeShell from './NodeShell.vue'
 import NodeHandles from './NodeHandles.vue'
+import NodeFlowChips from './NodeFlowChips.vue'
 
 defineOptions({ inheritAttrs: false })
 
@@ -15,6 +16,10 @@ const props = defineProps({
   data: { type: Object, required: true },
   selected: { type: Boolean, default: false },
 })
+
+function onPickFlow(payload) {
+  props.data._onPickFlow?.(payload)
+}
 
 const fields = computed(() => props.data.fields || [])
 
@@ -69,5 +74,6 @@ function tagColor(field) {
       >{{ f.name }}</span>
       <span class="text-fg-faint flex-shrink-0">{{ f.type }}</span>
     </div>
+    <NodeFlowChips :chips="data.flowChips || []" @pick-flow="onPickFlow" />
   </NodeShell>
 </template>

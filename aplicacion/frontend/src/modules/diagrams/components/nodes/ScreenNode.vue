@@ -6,14 +6,27 @@
 <script setup>
 import NodeShell from './NodeShell.vue'
 import NodeHandles from './NodeHandles.vue'
+import NodeFlowChips from './NodeFlowChips.vue'
 import { Lock, ExternalLink } from 'lucide-vue-next'
 
 defineOptions({ inheritAttrs: false })
 
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   data: { type: Object, required: true },
   selected: { type: Boolean, default: false },
 })
+
+const routeLabel = computed(() => {
+  const routes = props.data.routes
+  if (Array.isArray(routes) && routes.length) return routes.join(', ')
+  return props.data.route || '—'
+})
+
+function onPickFlow(payload) {
+  props.data._onPickFlow?.(payload)
+}
 </script>
 
 <template>
@@ -33,7 +46,7 @@ defineProps({
         borderTop: '1px solid var(--border-subtle)',
       }"
     >
-      <span class="text-kind-screen mr-1.5">→</span>{{ data.route }}
+      <span class="text-kind-screen mr-1.5">→</span>{{ routeLabel }}
     </div>
     <div
       v-if="data.requiresAuth !== undefined"
@@ -50,5 +63,6 @@ defineProps({
       <ExternalLink v-else :size="9" />
       {{ data.requiresAuth ? 'auth' : 'pública' }}
     </div>
+    <NodeFlowChips :chips="data.flowChips || []" @pick-flow="onPickFlow" />
   </NodeShell>
 </template>

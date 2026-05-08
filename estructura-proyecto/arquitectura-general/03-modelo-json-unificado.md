@@ -1,5 +1,15 @@
 # Modelo JSON unificado
 
+> **Modificación — 2026-05-08**
+> Se actualiza el objeto `flow` dentro del array `flows`.
+>
+> **Qué cambia:**
+> - `steps` pasa de `string[]` a `StepObject[]`. Cada step ahora es un objeto con `index`, `label`, `layer`, `moduleId`, `file`, `fn` y `nodeId`.
+> - `nodeId` es el ID de Vue Flow calculado por el parser (`scr-X`, `mod-X`, `db-X`). El frontend no necesita resolver la referencia.
+> - Los flujos ya no generan nodos en el canvas — desaparece el tipo de nodo `flow`. Los chips de flujo se renderizan dentro de los nodos de las otras capas.
+
+---
+
 ## Qué es este documento
 
 Este documento define la estructura exacta del JSON que devuelve el parser al frontend. Es el contrato entre el backend y el módulo de diagramas del frontend. Ambas partes deben respetar este formato.
@@ -164,11 +174,60 @@ Los archivos `.md` usan kebab-case en los campos del frontmatter (`depends-on`, 
       ],
       "database": ["users"],
       "steps": [
-        "User enters username and password on the login screen",
-        "handleLogin() validates the form and calls POST /auth/login",
-        "login() validates credentials against the users table",
-        "login() generates and returns a signed JWT token",
-        "Frontend stores the token in localStorage and redirects to dashboard"
+        {
+          "index": 0,
+          "label": "El usuario rellena el formulario de login",
+          "layer": "screen",
+          "moduleId": "login",
+          "file": null,
+          "fn": null,
+          "nodeId": "scr-login"
+        },
+        {
+          "index": 1,
+          "label": "Se valida el formulario y se llama a POST /auth/login",
+          "layer": "frontend",
+          "moduleId": "auth-frontend",
+          "file": "LoginView.vue",
+          "fn": "handleLogin",
+          "nodeId": "mod-auth-frontend"
+        },
+        {
+          "index": 2,
+          "label": "Se validan las credenciales contra la tabla users",
+          "layer": "backend",
+          "moduleId": "auth-backend",
+          "file": "auth.controller.ts",
+          "fn": "login",
+          "nodeId": "mod-auth-backend"
+        },
+        {
+          "index": 3,
+          "label": "Se consulta el registro del usuario",
+          "layer": "database",
+          "moduleId": "users",
+          "file": null,
+          "fn": null,
+          "nodeId": "db-users"
+        },
+        {
+          "index": 4,
+          "label": "Se genera el JWT firmado",
+          "layer": "backend",
+          "moduleId": "auth-backend",
+          "file": "auth.service.ts",
+          "fn": "generateToken",
+          "nodeId": "mod-auth-backend"
+        },
+        {
+          "index": 5,
+          "label": "Se almacena el token y se redirige al dashboard",
+          "layer": "screen",
+          "moduleId": "dashboard",
+          "file": null,
+          "fn": null,
+          "nodeId": "scr-dashboard"
+        }
       ],
       "errorCases": [
         "Invalid credentials: login() returns 401, handleLogin() shows error on screen",
@@ -216,6 +275,22 @@ Los archivos `.md` usan kebab-case en los campos del frontmatter (`depends-on`, 
   }
 }
 ```
+
+---
+
+## Estructura del objeto StepObject (campo `steps` de un flow)
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `index` | number | Posición del paso en la secuencia, empezando en 0 |
+| `label` | string | Texto descriptivo del paso |
+| `layer` | `'screen'` \| `'frontend'` \| `'backend'` \| `'database'` \| `null` | Capa del sistema a la que pertenece el paso. `null` si el paso no tiene prefijo de referencia |
+| `moduleId` | string \| null | ID del módulo, pantalla o tabla referenciados. Coincide con el `id` del elemento en su capa correspondiente |
+| `file` | string \| null | Nombre del archivo dentro del módulo (solo backend y frontend) |
+| `fn` | string \| null | Nombre de la función dentro del archivo (solo backend) |
+| `nodeId` | string \| null | ID del nodo en Vue Flow, calculado por el parser. Convenciones: `scr-{id}` para screens, `mod-{id}` para módulos backend y frontend, `db-{id}` para tablas. `null` si el paso no tiene prefijo |
+
+Los pasos sin prefijo (`layer: null`, `nodeId: null`) son válidos. Aparecen en el panel de flujos como texto simple pero no generan edges en el canvas ni chips en los nodos.
 
 ---
 

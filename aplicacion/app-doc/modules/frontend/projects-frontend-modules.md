@@ -2,70 +2,96 @@
 type: module
 layer: frontend
 id: projects-frontend
-name: Projects
-description: Gestiona la lista de proyectos del usuario y la vista de detalle de cada proyecto, incluyendo sus diagramas asociados
-screens: [projects, project-detail]
-consumes-api: []
-depends-on: [auth-frontend, diagrams-frontend]
+name: Proyectos
+description: Detalle de proyecto, listado de diagramas y CRUD de proyectos
+screens: [project-detail]
+consumes-api: [projects-backend, diagrams-backend]
+depends-on: []
 folders:
-  - id: projects-views
+  - id: views
     path: src/modules/projects/views
-  - id: projects-stores
+  - id: components
+    path: src/modules/projects/components
+  - id: stores
     path: src/modules/projects/stores
-  - id: projects-mock
-    path: src/modules/projects/logica-temporal
+  - id: services
+    path: src/modules/projects/services
+  - id: utils
+    path: src/modules/projects/utils
 files:
-  - id: projects-view
-    folder: projects-views
-    path: ProjectsView.vue
-    type: view
   - id: project-detail-view
-    folder: projects-views
+    folder: views
     path: ProjectDetailView.vue
     type: view
+  - id: project-card
+    folder: components
+    path: ProjectCard.vue
+    type: component
+  - id: diagram-card
+    folder: components
+    path: DiagramCard.vue
+    type: component
+  - id: confirm-delete-modal
+    folder: components
+    path: ConfirmDeleteModal.vue
+    type: component
   - id: projects-store
-    folder: projects-stores
+    folder: stores
     path: projects.store.js
     type: store
-  - id: projects-mock-file
-    folder: projects-mock
-    path: projects-mock.js
+  - id: projects-frontend-service
+    folder: services
+    path: projects.service.js
+    type: service
+  - id: time-format
+    folder: utils
+    path: time-format.js
     type: helper
 ---
 
 ## Purpose
-
-Cubre la gestión CRUD de proyectos. La vista de lista (`ProjectsView`) muestra todos los proyectos con opción de crear uno nuevo. La vista de detalle (`ProjectDetailView`) muestra la información del proyecto y la lista de diagramas que contiene, con acceso al canvas de cada diagrama y a la creación de nuevos.
-
-El store mantiene la lista en memoria con caché (campo `loaded`) y delega operaciones a `projects-mock.js`. La función `bumpDiagramCount` actualiza el contador de diagramas de un proyecto de forma optimista en la lista local.
+Gestiona la vista de detalle del proyecto con sus diagramas y el CRUD de proyectos desde el cliente. El store mantiene la lista de proyectos en caché para evitar peticiones redundantes al backend (la cache se invalida pasando `force=true` o creando/borrando un proyecto). Los componentes `ProjectCard` y `DiagramCard` se usan también desde el dashboard.
 
 ## State
-
 - projects
 - loading
 - loaded
 
 ## Functions
 
+### project-detail-view
+- onMounted: carga el proyecto y sus diagramas
+- handleCreateDiagram()
+- handleDeleteProject()
+- handleDeleteDiagram(diagramId)
+
+### project-card
+- onClick: navega al detalle del proyecto
+- onDelete: emite el evento de borrado (con confirmación)
+
+### diagram-card
+- onClick: navega al diagrama
+- onDelete: emite el evento de borrado (con confirmación)
+
 ### projects-store
 - fetchAll(force)
 - fetchById(id)
 - create(payload)
 - bumpDiagramCount(projectId, delta)
+- remove(id)
 
-### projects-mock-file
+### projects-frontend-service
 - fetchAll()
 - fetchById(id)
-- create(payload)
-- bumpDiagramCount(projectId, delta)
+- create({ name, description })
+- bumpDiagramCount(projectId)
+- remove(id)
 
-### project-detail-view
-- onMounted() — carga el proyecto por id de la URL y sus diagramas
-- goToNewDiagram()
-- goToDiagram(id)
+### time-format
+- formatRelative(date)
+- formatDate(date)
 
 ## Notes
-
-El store usa un patrón de caché simple: si `loaded` es `true`, `fetchAll()` devuelve los datos en memoria sin re-solicitar. Se puede forzar el refresco pasando `force = true`.
-
-`bumpDiagramCount` actualiza el contador localmente en `projects.value` para evitar un re-fetch completo cuando el módulo de diagramas crea o elimina uno.
+El service normaliza los campos snake_case del backend a camelCase para uso en componentes (`diagram_count` → `diagramCount`, `created_at` → `createdAt`, `last_update` → `updatedAt`).
+La acción `bumpDiagramCount` no incrementa localmente — refetcha el proyecto desde el backend para garantizar consistencia (incluye `last_update` y el contador real).
+Borrar un proyecto con diagramas dentro falla con el mensaje del backend ("El proyecto tiene diagramas. Bórralos primero."). El componente de confirmación muestra ese error sin cerrar el modal.

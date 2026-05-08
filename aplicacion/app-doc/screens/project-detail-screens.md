@@ -1,31 +1,40 @@
 ---
 type: screen
 id: project-detail
-name: Project Detail
-description: Vista de detalle de un proyecto — muestra su información y la lista de diagramas que contiene con acceso a cada canvas
+name: Detalle de proyecto
+description: Vista del proyecto con sus diagramas y opciones de gestión
 module: projects-frontend
+folder: views
+file: project-detail-view
 requires-auth: true
+routes:
+  - /projects/:id
+navigates-to: [diagram-new, diagram-view, dashboard]
+components:
+  - DiagramCard
+  - ConfirmDeleteModal
 ---
 
 ## Description
-
-Ruta `/projects/:id`. Carga el proyecto por el ID de la URL y lista sus diagramas. Desde aquí el usuario puede abrir cualquier diagrama existente o iniciar la creación de uno nuevo navegando a la vista de generación.
+Muestra los datos del proyecto (nombre, descripción, fecha de última actualización) y la lista de diagramas que contiene. Permite crear un diagrama nuevo, abrir uno existente o borrar el proyecto. El borrado solo se permite si no quedan diagramas dentro — el botón muestra el motivo si está bloqueado.
 
 ## Elements
-
-- cabecera con nombre y descripción del proyecto
-- cuadrícula de tarjetas de diagrama (nombre, fecha)
-- botón Nuevo diagrama
-- botón Volver al dashboard
+- header con nombre del proyecto y descripción
+- timestamp "última actualización"
+- botón "Nuevo diagrama"
+- grid de tarjetas de diagramas
+- botón "Borrar proyecto" (deshabilitado si hay diagramas)
+- modal de confirmación al borrar el proyecto o un diagrama
 
 ## Actions
-
-- go-to-diagram(id)
-- go-to-new-diagram
-- go-back
+- create-diagram
+- open-diagram
+- delete-diagram
+- delete-project
+- back-to-dashboard
 
 ## States
-
-- loading (mientras se carga el proyecto y sus diagramas)
-- empty (cuando el proyecto no tiene diagramas)
-- not-found (si el ID de la URL no existe — redirige al dashboard)
+- default
+- loading
+- error
+- empty

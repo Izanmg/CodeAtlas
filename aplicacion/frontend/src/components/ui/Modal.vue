@@ -5,6 +5,7 @@
   Slot por defecto = cuerpo. Slot `footer` = fila de acciones.
 -->
 <script setup>
+import { ref } from 'vue'
 import { X } from 'lucide-vue-next'
 
 defineProps({
@@ -13,7 +14,20 @@ defineProps({
   width: { type: Number, default: 480 },
 })
 
-defineEmits(['close'])
+const emit = defineEmits(['close'])
+
+const mousedownOnBackdrop = ref(false)
+
+function onBackdropMousedown(e) {
+  mousedownOnBackdrop.value = e.target === e.currentTarget
+}
+
+function onBackdropMouseup(e) {
+  if (mousedownOnBackdrop.value && e.target === e.currentTarget) {
+    emit('close')
+  }
+  mousedownOnBackdrop.value = false
+}
 </script>
 
 <template>
@@ -22,7 +36,8 @@ defineEmits(['close'])
       v-if="open"
       class="fixed inset-0 z-[100] grid place-items-center"
       style="background: rgba(9, 9, 11, 0.5); backdrop-filter: blur(2px); animation: ca-fade 120ms ease-out;"
-      @click.self="$emit('close')"
+      @mousedown="onBackdropMousedown"
+      @mouseup="onBackdropMouseup"
     >
       <div
         class="bg-surface-overlay rounded-lg shadow-xl"

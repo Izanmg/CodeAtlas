@@ -1,26 +1,36 @@
 ---
 type: screen
 id: register
-name: Register
-description: Formulario de creación de cuenta nueva — nombre, email y contraseña — con redirección al dashboard tras registrarse
+name: Registro
+description: Pantalla pública para crear una cuenta nueva
 module: auth-frontend
+folder: views
+file: register-view
 requires-auth: false
+routes:
+  - /register
+navigates-to: [dashboard, login]
+components:
+  - AuthShell
+  - AuthVisualSide
 ---
 
 ## Description
-
-Pantalla accesible solo para usuarios sin sesión (guestOnly). Recoge los datos mínimos para crear una cuenta. Al enviar, llama al store de auth con el payload; si tiene éxito inicia sesión directamente y redirige a `/`.
+Permite crear una cuenta nueva con nombre, email y contraseña. Tras un registro exitoso el backend devuelve usuario + token y el cliente queda autenticado automáticamente, redirigiendo al dashboard sin pasar por login.
 
 ## Elements
-
-- campo nombre
-- campo email
-- campo contraseña
+- input nombre
+- input email
+- input contraseña
 - botón Crear cuenta
-- enlace de vuelta al login
-- mensaje de error (condicional)
+- enlace "¿Ya tienes cuenta? Inicia sesión"
+- mensaje de error si el email ya está registrado o la contraseña no cumple los requisitos
 
 ## Actions
-
 - submit-register
 - go-to-login
+
+## States
+- default
+- loading
+- error

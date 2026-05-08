@@ -30,3 +30,16 @@ export async function create({ name, description }) {
 export async function bumpDiagramCount(projectId) {
   return fetchById(projectId)
 }
+
+export async function update(id, { name, description }) {
+  return normalize(
+    await http(`/projects/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name, description }),
+    })
+  )
+}
+
+export async function remove(id) {
+  return http(`/projects/${id}`, { method: 'DELETE' })
+}

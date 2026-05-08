@@ -2,81 +2,79 @@
 type: module
 layer: backend
 id: parser-backend
-name: Parser
-description: Recibe archivos .md de documentación, los procesa por un pipeline secuencial y devuelve un modelo JSON con el diagrama y las coordenadas de cada nodo
+name: Parser de documentación
+description: Pipeline que convierte archivos .md en el modelo JSON unificado del diagrama
 database: []
 api:
   - POST /api/parser/doc
   - POST /api/parser/code
 depends-on: []
 folders:
-  - id: core
-    path: src/modules/parser/core
-  - id: sources
+  - id: parser-root
+    path: src/modules/parser
+  - id: parser-sources
     path: src/modules/parser/sources
+  - id: parser-core
+    path: src/modules/parser/core
 files:
   - id: parser-routes
+    folder: parser-root
     path: parser.routes.js
     type: router
   - id: parser-controller
+    folder: parser-root
     path: parser.controller.js
     type: controller
   - id: parser-service
+    folder: parser-root
     path: parser.service.js
     type: service
   - id: parser-repository
+    folder: parser-root
     path: parser.repository.js
     type: repository
   - id: markdown-source
-    folder: sources
+    folder: parser-sources
     path: markdown-source.js
     type: source
   - id: yaml-parser
-    folder: core
+    folder: parser-core
     path: yaml-parser.js
-    type: helper
+    type: core
   - id: validator
-    folder: core
+    folder: parser-core
     path: validator.js
-    type: helper
-  - id: model-builder
-    folder: core
-    path: model-builder.js
-    type: helper
-  - id: resolver
-    folder: core
-    path: resolver.js
-    type: helper
-  - id: layout-calculator
-    folder: core
-    path: layout-calculator.js
-    type: helper
+    type: core
   - id: frontmatter-config
-    folder: core
+    folder: parser-core
     path: frontmatter.config.js
-    type: config
+    type: core
   - id: sections-config
-    folder: core
+    folder: parser-core
     path: sections.config.js
-    type: config
+    type: core
+  - id: model-builder
+    folder: parser-core
+    path: model-builder.js
+    type: core
+  - id: resolver
+    folder: parser-core
+    path: resolver.js
+    type: core
+  - id: layout-calculator
+    folder: parser-core
+    path: layout-calculator.js
+    type: core
 ---
 
 ## Purpose
-
-Módulo principal del backend. Orquesta la transformación de archivos de documentación Markdown en un modelo JSON que describe la arquitectura de una aplicación.
-
-El endpoint `POST /api/parser/doc` recibe N archivos `.md` vía multipart (multer en memoria), los procesa a través de un pipeline de 7 pasos y devuelve `{ model, layout }`. El endpoint `POST /api/parser/code` está reservado para una iteración futura y responde 501.
-
-Pipeline completo:
-1. **sortFiles** — reordena los archivos para que las dependencias se procesen primero (01-modules antes que módulos, módulos antes que pantallas, etc.)
-2. **extractFromMarkdown** — extrae el YAML del frontmatter y las secciones `## Nombre` de cada archivo
-3. **validateAndParse** — parsea el YAML con js-yaml y valida el frontmatter contra el schema; lanza error 400 en el primer fallo
-4. **buildModel** — ensambla el modelo JSON unificado con shape `{ modules, screens, flows, database, systemRules }`
-5. **resolveReferences** — comprueba que todas las referencias cruzadas de IDs apuntan a elementos que existen; emite advertencias sin lanzar
-6. **calculateLayout** — calcula las coordenadas `{ x, y }` por defecto de cada nodo
-7. **saveModel** — persiste `{ model, layout }` en memoria
+Recibe un conjunto de archivos `.md` en multipart y los transforma en el modelo unificado JSON que consume el frontend para renderizar el diagrama. El pipeline es lineal y cada paso se aísla en su propio archivo: extracción del frontmatter, parseo YAML, validación contra el esquema, construcción del modelo, resolución de referencias cruzadas, cálculo del layout inicial. Es el único módulo del backend que no toca la base de datos directamente — el cliente final del modelo es `diagrams-backend`.
 
 ## Functions
+
+### parser-routes
+- monta POST /doc con multer (multipart, campo files)
+- monta POST /code (501 Not Implemented por ahora)
 
 ### parser-controller
 - parseDoc(req, res)
@@ -84,8 +82,6 @@ Pipeline completo:
 
 ### parser-service
 - parseDocumentation(files)
-- sortFiles(files)
-- validateAndParse(extracted, sortedFiles)
 
 ### parser-repository
 - saveModel(diagram)
@@ -95,13 +91,15 @@ Pipeline completo:
 - extractFromMarkdown(files)
 
 ### yaml-parser
-- parseYaml(yamlString)
+- parseYaml(text)
 
 ### validator
-- validateFrontmatter(yaml, rawYaml, filename)
+- validateAndParse(extracted, sortedFiles)
 
 ### model-builder
-- buildModel(parsedItems)
+- buildModel(parsedFiles)
+- parseFlowSteps(text)
+- computeNodeId(layer, moduleId)
 
 ### resolver
 - resolveReferences(model)
@@ -110,11 +108,7 @@ Pipeline completo:
 - calculateLayout(model)
 
 ## Notes
-
-`parser.repository.js` persiste en una variable de módulo. Cuando se conecte la base de datos solo cambia este archivo; el service no necesita tocarse.
-
-`layout-calculator.js` asigna coordenadas por columnas: database | backend | frontend | screens (izquierda a derecha), flows debajo de la columna más larga, y system-rules en la esquina superior izquierda a y=60.
-
-Los errores de validación siempre empiezan por `[nombre-archivo]`; el controller los mapea a HTTP 400. Cualquier otro error se mapea a HTTP 500.
-
-`POST /api/parser/code` está registrado en las rutas pero devuelve 501. Cuando se implemente, añadirá un `code-source.js` en `sources/` sin cambiar el pipeline.
+El orden de procesamiento es importante: módulos primero (definen file-types), después database, después screens (referencian módulos), después flows (referencian todo), por último system-rules. Esto lo aplica `sortFiles` en el service.
+Los pasos de flujo soportan el prefijo opcional `[capa:moduleId/archivo/función]`. El parser extrae este prefijo y calcula el `nodeId` correspondiente (`scr-X`, `mod-X`, `db-X`) directamente en el modelo, así el frontend no necesita resolver las convenciones de Vue Flow.
+La persistencia del parser (`parser.repository`) es solo en memoria; el cliente real (`diagrams-backend`) no la usa — recoge el resultado directamente del service y lo guarda en su propia tabla.
+Las rutas del parser no requieren autenticación porque están pensadas para uso interno (las llamadas vienen del módulo `diagrams-backend` cuando un usuario autenticado genera un diagrama).

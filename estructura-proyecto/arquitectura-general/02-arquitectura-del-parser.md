@@ -53,6 +53,15 @@ El parser lee los archivos en un orden concreto porque algunos dependen de otros
 
 Una vez que todos los archivos están parseados, el `resolver.js` recorre el modelo y sustituye los IDs por referencias reales a los objetos correspondientes. Por ejemplo, el campo `module: auth-frontend` de una pantalla deja de ser un string y pasa a apuntar directamente al objeto del módulo `auth-frontend`.
 
+> **Modificación — 2026-05-08:** al parsear los archivos de flujo, el paso de construcción de `flow.steps` incluye ahora un sub-paso adicional para cada ítem de la lista:
+>
+> 1. Detectar si el ítem empieza con el patrón `[capa:ref]` mediante regex.
+> 2. Si existe, extraer `layer`, `moduleId`, `file` y `fn` del prefijo (los niveles separados por `/` son opcionales).
+> 3. Calcular `nodeId` aplicando las convenciones del canvas: `scr-{id}` para screens, `mod-{id}` para módulos backend y frontend, `db-{id}` para tablas.
+> 4. Construir el `StepObject` con todos los campos. Si no hay prefijo, todos los campos de referencia son `null`.
+>
+> Este cálculo de `nodeId` se realiza en el parser (backend) para que el frontend reciba la referencia ya resuelta y no necesite conocer las convenciones de prefijado de Vue Flow.
+
 ---
 
 ## El parser de código: mismo YAML, distinto contenedor

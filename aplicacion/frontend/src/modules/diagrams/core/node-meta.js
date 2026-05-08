@@ -17,4 +17,8 @@ export const NODE_META = {
   rules:    { label: 'rules',    icon: Shield,          color: 'var(--kind-rules)',    bg: 'var(--kind-rules-bg)'    },
 }
 
-export const KIND_KEYS = ['backend', 'frontend', 'screen', 'database', 'flow', 'rules']
+// Los flujos ya no se renderizan como nodos del canvas — se incrustan como
+// chips dentro de los demás nodos. La metadata `flow` se conserva en NODE_META
+// porque sigue usándose para el color/icono del chip y de los edges en modo
+// flujos, pero no aparece en KIND_KEYS porque no es un tipo filtrable.
+export const KIND_KEYS = ['backend', 'frontend', 'screen', 'database', 'rules']

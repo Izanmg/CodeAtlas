@@ -31,5 +31,21 @@ export const useDiagramsStore = defineStore('diagrams', () => {
     return diagram
   }
 
-  return { all, loaded, current, fetchAll, fetchByProject, fetchById, generate }
+  async function saveLayout(id, layout) {
+    await diagramsApi.saveLayout(id, layout)
+  }
+
+  async function update(id, payload, onProgress) {
+    const diagram = await diagramsApi.update(id, payload, onProgress)
+    all.value = all.value.map((d) => d.id === id ? diagram : d)
+    if (current.value?.id === id) current.value = diagram
+    return diagram
+  }
+
+  async function remove(id) {
+    await diagramsApi.remove(id)
+    all.value = all.value.filter((d) => d.id !== id)
+  }
+
+  return { all, loaded, current, fetchAll, fetchByProject, fetchById, generate, update, saveLayout, remove }
 })

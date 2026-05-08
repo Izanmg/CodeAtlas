@@ -2,36 +2,44 @@ import { randomUUID } from 'crypto'
 import pool from '../../database/db.js'
 import { touchProject } from '../../core/projects.core.js'
 
+/**
+ * Todas las consultas de este repositorio incluyen `user_id` en el WHERE
+ * (o en el INSERT). El service NO debe asumir que un id existe sin pasar
+ * también el userId — si el diagrama pertenece a otro usuario, las funciones
+ * devuelven null o no afectan filas.
+ */
+
 export async function findRecentByUser(userId, limit = 10) {
   const [rows] = await pool.query(
-    `SELECT d.id, d.project_id, d.name, d.description,
-            d.count_modules, d.count_screens, d.count_tables, d.count_flows,
-            d.created_at
-     FROM diagrams d
-     JOIN projects p ON p.id = d.project_id
-     WHERE p.user_id = ?
-     ORDER BY d.created_at DESC
+    `SELECT id, project_id, name, description,
+            count_modules, count_screens, count_tables, count_flows,
+            created_at
+     FROM diagrams
+     WHERE user_id = ?
+     ORDER BY created_at DESC
      LIMIT ?`,
     [userId, limit]
   )
   return rows
 }
 
-export async function findByProject(projectId) {
+export async function findByProject(projectId, userId) {
   const [rows] = await pool.query(
     `SELECT id, project_id, name, description,
             count_modules, count_screens, count_tables, count_flows,
             created_at
-     FROM diagrams WHERE project_id = ? ORDER BY created_at DESC`,
-    [projectId]
+     FROM diagrams
+     WHERE project_id = ? AND user_id = ?
+     ORDER BY created_at DESC`,
+    [projectId, userId]
   )
   return rows
 }
 
-export async function findById(id) {
+export async function findById(id, userId) {
   const [rows] = await pool.query(
-    'SELECT * FROM diagrams WHERE id = ?',
-    [id]
+    'SELECT * FROM diagrams WHERE id = ? AND user_id = ?',
+    [id, userId]
   )
   if (!rows[0]) return null
   const row = rows[0]
@@ -44,7 +52,7 @@ export async function findById(id) {
   }
 }
 
-export async function create({ projectId, name, description, model, layout }) {
+export async function create({ projectId, userId, name, description, model, layout }) {
   const id = randomUUID()
   const countModules = (model.modules?.backend?.length ?? 0) + (model.modules?.frontend?.length ?? 0)
   const countScreens = model.screens?.length ?? 0
@@ -53,19 +61,60 @@ export async function create({ projectId, name, description, model, layout }) {
 
   await pool.query(
     `INSERT INTO diagrams
-       (id, project_id, name, description, model_json, layout_json,
+       (id, user_id, project_id, name, description, model_json, layout_json,
         count_modules, count_screens, count_tables, count_flows)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, projectId, name, description ?? null,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, userId, projectId, name, description ?? null,
      JSON.stringify(model), JSON.stringify(layout),
      countModules, countScreens, countTables, countFlows]
   )
   await touchProject(projectId)
-  return findById(id)
+  return findById(id, userId)
 }
 
-export async function remove(id) {
-  const [[row]] = await pool.query('SELECT project_id FROM diagrams WHERE id = ?', [id])
-  await pool.query('DELETE FROM diagrams WHERE id = ?', [id])
-  if (row) await touchProject(row.project_id)
+export async function updateLayout(id, userId, layout) {
+  const [result] = await pool.query(
+    'UPDATE diagrams SET layout_json = ? WHERE id = ? AND user_id = ?',
+    [JSON.stringify(layout), id, userId]
+  )
+  return result.affectedRows > 0
+}
+
+export async function update(id, userId, { name, description, model, layout }) {
+  const [[row]] = await pool.query(
+    'SELECT project_id FROM diagrams WHERE id = ? AND user_id = ?',
+    [id, userId]
+  )
+  if (!row) return null
+
+  const params = [name, description ?? null]
+  let extraSets = ''
+
+  if (model !== undefined) {
+    const countModules = (model.modules?.backend?.length ?? 0) + (model.modules?.frontend?.length ?? 0)
+    const countScreens = model.screens?.length ?? 0
+    const countTables  = model.database?.length ?? 0
+    const countFlows   = model.flows?.length ?? 0
+    extraSets = ', model_json = ?, layout_json = ?, count_modules = ?, count_screens = ?, count_tables = ?, count_flows = ?'
+    params.push(JSON.stringify(model), JSON.stringify(layout), countModules, countScreens, countTables, countFlows)
+  }
+
+  params.push(id, userId)
+  await pool.query(
+    `UPDATE diagrams SET name = ?, description = ?${extraSets} WHERE id = ? AND user_id = ?`,
+    params
+  )
+  await touchProject(row.project_id)
+  return findById(id, userId)
+}
+
+export async function remove(id, userId) {
+  const [[row]] = await pool.query(
+    'SELECT project_id FROM diagrams WHERE id = ? AND user_id = ?',
+    [id, userId]
+  )
+  if (!row) return false
+  await pool.query('DELETE FROM diagrams WHERE id = ? AND user_id = ?', [id, userId])
+  await touchProject(row.project_id)
+  return true
 }

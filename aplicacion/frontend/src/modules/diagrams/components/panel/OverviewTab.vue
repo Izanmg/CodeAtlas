@@ -41,7 +41,11 @@ const topConnections = computed(() => {
         <StatTile label="APIs consumidas" :value="m.consumesApi?.length || 0" />
       </template>
       <template v-else-if="kind === 'screen'">
-        <StatTile label="ruta" :value="m.route || '—'" mono />
+        <StatTile
+          label="ruta"
+          :value="(m.routes && m.routes.length ? m.routes.join(', ') : (m.route || '—'))"
+          mono
+        />
         <StatTile label="auth" :value="m.requiresAuth ? 'sí' : 'no'" />
       </template>
       <template v-else-if="kind === 'database'">
