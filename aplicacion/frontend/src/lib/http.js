@@ -27,7 +27,15 @@ export async function http(path, options = {}) {
 
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
-    throw new Error(data.error || `Error ${res.status}`)
+    // Adjuntamos status y el cuerpo JSON completo al Error para que los
+    // callers puedan distinguir códigos de error específicos sin parsear
+    // el mensaje a mano. Por ejemplo, errores de cuota del bot devuelven
+    // { code: 'QUOTA_EXCEEDED', model, suggestedModel } y el frontend los
+    // renderiza con UI especial.
+    const err = new Error(data.error || `Error ${res.status}`)
+    err.status = res.status
+    err.data = data
+    throw err
   }
 
   if (res.status === 204) return null

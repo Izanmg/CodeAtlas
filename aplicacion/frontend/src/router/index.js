@@ -63,6 +63,14 @@ const routes = [
     meta: { requiresAuth: true },
   },
 
+  // Asistente IA
+  {
+    path: '/bot',
+    name: 'bot',
+    component: () => import('@/modules/bot/views/BotView.vue'),
+    meta: { requiresAuth: true },
+  },
+
   // Configuración
   {
     path: '/settings',

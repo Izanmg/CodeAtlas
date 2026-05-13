@@ -31,7 +31,7 @@ import SectionLabel from '@/modules/projects/components/SectionLabel.vue'
 import ProjectCard from '@/modules/projects/components/ProjectCard.vue'
 import { timeAgo } from '@/modules/projects/utils/time-format'
 
-import { Plus, Search, Folder, Network, AlertCircle, ArrowRight } from 'lucide-vue-next'
+import { Plus, Search, Folder, Network, AlertCircle, ArrowRight, Bot } from 'lucide-vue-next'
 
 const router = useRouter()
 const projectsStore = useProjectsStore()
@@ -106,6 +106,10 @@ function openDiagram(d) {
               <template #icon><Search :size="14" /></template>
             </Input>
           </div>
+          <Button variant="secondary" @click="router.push('/bot')">
+            <template #icon><Bot :size="14" /></template>
+            Asistente IA
+          </Button>
           <Button variant="primary" @click="newProjectOpen = true">
             <template #icon><Plus :size="14" /></template>
             Nuevo proyecto

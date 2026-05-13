@@ -48,6 +48,27 @@ CREATE TABLE IF NOT EXISTS diagrams (
   INDEX idx_diagrams_project_id (project_id)
 );
 
+CREATE TABLE IF NOT EXISTS bot_sessions (
+  id           CHAR(36)     NOT NULL DEFAULT (UUID()),
+  user_id      CHAR(36)     NOT NULL,
+  title        VARCHAR(255) NOT NULL DEFAULT 'Nueva conversación',
+  history_json LONGTEXT     NOT NULL,
+  created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  INDEX idx_bot_sessions_user (user_id, updated_at),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS bot_files (
+  session_id CHAR(36)     NOT NULL,
+  path       VARCHAR(255) NOT NULL,
+  content    LONGTEXT     NOT NULL,
+  updated_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (session_id, path),
+  FOREIGN KEY (session_id) REFERENCES bot_sessions(id) ON DELETE CASCADE
+);
+
 -- Migración para bases de datos existentes:
 -- ALTER TABLE diagrams ADD COLUMN count_modules SMALLINT NOT NULL DEFAULT 0;
 -- ALTER TABLE diagrams ADD COLUMN count_screens  SMALLINT NOT NULL DEFAULT 0;

@@ -15,6 +15,7 @@ import authRoutes      from './modules/auth/auth.routes.js'
 import projectsRoutes  from './modules/projects/projects.routes.js'
 import diagramsRoutes  from './modules/diagrams/diagrams.routes.js'
 import settingsRoutes  from './modules/settings/settings.routes.js'
+import botRoutes       from './modules/bot/bot.routes.js'
 
 dotenv.config()
 
@@ -29,5 +30,6 @@ app.use('/api/projects', projectsRoutes)
 app.use('/api',          diagramsRoutes)
 app.use('/api/parser',   parserRoutes)
 app.use('/api/settings', settingsRoutes)
+app.use('/api/bot',      botRoutes)
 
 export default app
