@@ -62,6 +62,11 @@ export async function saveLayout(id, userId, layout) {
   if (!ok) throw new Error('Diagrama no encontrado')
 }
 
+export async function saveModuleLayout(id, userId, moduleId, layout) {
+  const ok = await repo.updateModuleLayout(id, userId, moduleId, layout)
+  if (!ok) throw new Error('Diagrama no encontrado')
+}
+
 export async function remove(id, userId) {
   const ok = await repo.remove(id, userId)
   if (!ok) throw new Error('Diagrama no encontrado')

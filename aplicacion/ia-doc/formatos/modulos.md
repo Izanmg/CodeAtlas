@@ -228,6 +228,7 @@ Session tokens are JWT with a 24-hour expiry stored in the sessions table.
 | `files[].path` | string | (si files) | Nombre o ruta relativa del archivo |
 | `files[].type` | string | (si files) | Tipo del archivo. Debe ser uno de los declarados en `file-types.backend` del índice |
 | `files[].imports` | array de IDs | no | IDs de **otros archivos del mismo módulo** que este archivo importa o usa. Genera aristas en la vista detallada del módulo. Las dependencias entre módulos van en `depends-on` del módulo, no aquí |
+| `files[].role` | string | no | Breve nota explicando para qué sirve el archivo. Se muestra al hacer click en el nodo del archivo dentro de la vista detallada del módulo |
 
 ### Referencia de secciones Markdown
 
@@ -264,6 +265,21 @@ Session tokens are JWT with a 24-hour expiry stored in the sessions table.
 ```
 
 El nombre de cada subsección (`### auth-controller`) debe coincidir con el `id` de un archivo declarado en `files`. El parser construye la jerarquía módulo → carpeta → archivo → función a partir de esta información.
+
+**Con `doc:` por función** (cuando se quiere documentar individualmente lo que hace cada función):
+
+```markdown
+## Functions
+
+### auth-controller
+- login(req, res)
+  doc: Verifica credenciales contra la tabla users y firma un JWT con expiración 7d.
+- register(req, res)
+  doc: Crea un usuario nuevo, hashea la contraseña con bcrypt y devuelve el token.
+- logout(req, res)
+```
+
+La línea `doc:` debe ir indentada (dos espacios) justo debajo de la firma. Es opcional por función — las funciones sin `doc` se muestran como una línea simple en el frontend. Las que tienen `doc` aparecen como un botón desplegable: al pulsar la firma se expande mostrando el texto.
 
 ### Preguntas para extraer la información del usuario
 

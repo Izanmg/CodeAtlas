@@ -3,6 +3,21 @@ import pool from '../../database/db.js'
 import { touchProject } from '../../core/projects.core.js'
 
 /**
+ * Normaliza el layout leído de la BD a la forma nueva:
+ *   { main: { [nodeId]: { x, y } }, modules: { [moduleId]: { [fileNodeId]: { x, y } } } }
+ *
+ * Los diagramas viejos guardaron solo el canvas conceptual como un objeto
+ * plano. Se detectan por ausencia de la clave `main` y se envuelven al vuelo.
+ */
+function normalizeLayout(raw) {
+  if (!raw) return { main: {}, modules: {} }
+  if (typeof raw === 'object' && 'main' in raw) {
+    return { main: raw.main || {}, modules: raw.modules || {} }
+  }
+  return { main: raw, modules: {} }
+}
+
+/**
  * Todas las consultas de este repositorio incluyen `user_id` en el WHERE
  * (o en el INSERT). El service NO debe asumir que un id existe sin pasar
  * también el userId — si el diagrama pertenece a otro usuario, las funciones
@@ -47,7 +62,7 @@ export async function findById(id, userId) {
     ...row,
     data: {
       model:  JSON.parse(row.model_json),
-      layout: row.layout_json ? JSON.parse(row.layout_json) : {},
+      layout: normalizeLayout(row.layout_json ? JSON.parse(row.layout_json) : null),
     },
   }
 }
@@ -72,10 +87,39 @@ export async function create({ projectId, userId, name, description, model, layo
   return findById(id, userId)
 }
 
-export async function updateLayout(id, userId, layout) {
+export async function updateLayout(id, userId, mainLayout) {
+  // Lee el layout actual (con cualquier forma) y reemplaza solo `main`.
+  // Así no machacamos los layouts de módulos guardados antes.
+  const [[row]] = await pool.query(
+    'SELECT layout_json FROM diagrams WHERE id = ? AND user_id = ?',
+    [id, userId]
+  )
+  if (!row) return false
+  const current = normalizeLayout(row.layout_json ? JSON.parse(row.layout_json) : null)
+  current.main = mainLayout
   const [result] = await pool.query(
     'UPDATE diagrams SET layout_json = ? WHERE id = ? AND user_id = ?',
-    [JSON.stringify(layout), id, userId]
+    [JSON.stringify(current), id, userId]
+  )
+  return result.affectedRows > 0
+}
+
+/**
+ * Actualiza el layout del deep-dive de un módulo concreto. Hace merge en
+ * `layout.modules[moduleId]` sin tocar el resto del JSON.
+ */
+export async function updateModuleLayout(id, userId, moduleId, moduleLayout) {
+  const [[row]] = await pool.query(
+    'SELECT layout_json FROM diagrams WHERE id = ? AND user_id = ?',
+    [id, userId]
+  )
+  if (!row) return false
+  const current = normalizeLayout(row.layout_json ? JSON.parse(row.layout_json) : null)
+  if (!current.modules) current.modules = {}
+  current.modules[moduleId] = moduleLayout
+  const [result] = await pool.query(
+    'UPDATE diagrams SET layout_json = ? WHERE id = ? AND user_id = ?',
+    [JSON.stringify(current), id, userId]
   )
   return result.affectedRows > 0
 }

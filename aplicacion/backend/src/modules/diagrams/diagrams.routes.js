@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import multer from 'multer'
-import { getRecent, getByProject, getById, generate, update, saveLayout, remove } from './diagrams.controller.js'
+import { getRecent, getByProject, getById, generate, update, saveLayout, saveModuleLayout, remove } from './diagrams.controller.js'
 import { requireAuth } from '../auth/auth.middleware.js'
 
 const upload = multer({ storage: multer.memoryStorage() })
@@ -19,6 +19,7 @@ router.get('/diagrams/recent', getRecent)
 router.get('/diagrams/:id',           getById)
 router.patch('/diagrams/:id',         upload.array('files'), update)
 router.patch('/diagrams/:id/layout',  saveLayout)
+router.patch('/diagrams/:id/modules/:moduleId/layout', saveModuleLayout)
 router.delete('/diagrams/:id',        remove)
 
 export default router

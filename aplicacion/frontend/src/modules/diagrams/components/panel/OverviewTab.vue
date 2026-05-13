@@ -60,6 +60,10 @@ const topConnections = computed(() => {
         <StatTile label="auth" :value="m.auth?.length || 0" />
         <StatTile label="navegación" :value="m.navigation?.length || 0" />
       </template>
+      <template v-else-if="kind === 'file'">
+        <StatTile label="funciones" :value="m.functions?.length || 0" />
+        <StatTile label="imports" :value="m.imports?.length || 0" />
+      </template>
     </div>
 
     <div v-if="connections.total > 0">

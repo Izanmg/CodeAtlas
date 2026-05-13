@@ -34,7 +34,11 @@ const TOP = 80
  *                 Puede ser undefined o {} para usar solo el fallback.
  */
 export function autoLayout({ model, layout = {} }) {
-  const pos = (rawId, fallback) => layout[rawId] ?? fallback
+  // El layout llega ya normalizado por el backend a la forma
+  //   { main: { [nodeId]: { x, y } }, modules: { ... } }
+  // pero soportamos también la forma plana antigua por si llega sin pasar.
+  const mainLayout = (layout && 'main' in layout) ? (layout.main || {}) : (layout || {})
+  const pos = (rawId, fallback) => mainLayout[rawId] ?? fallback
   const nodes = []
 
   // Database (columna izquierda).

@@ -33,6 +33,32 @@ export const useDiagramsStore = defineStore('diagrams', () => {
 
   async function saveLayout(id, layout) {
     await diagramsApi.saveLayout(id, layout)
+    // Actualiza el current localmente para que un fetchById no machaque las
+    // nuevas posiciones cuando se vuelva a entrar al diagrama.
+    if (current.value?.id === id) {
+      current.value = {
+        ...current.value,
+        data: {
+          ...current.value.data,
+          layout: { ...current.value.data.layout, main: layout },
+        },
+      }
+    }
+  }
+
+  async function saveModuleLayout(id, moduleId, layout) {
+    await diagramsApi.saveModuleLayout(id, moduleId, layout)
+    if (current.value?.id === id) {
+      const modules = { ...(current.value.data.layout?.modules || {}) }
+      modules[moduleId] = layout
+      current.value = {
+        ...current.value,
+        data: {
+          ...current.value.data,
+          layout: { ...current.value.data.layout, modules },
+        },
+      }
+    }
   }
 
   async function update(id, payload, onProgress) {
@@ -47,5 +73,5 @@ export const useDiagramsStore = defineStore('diagrams', () => {
     all.value = all.value.filter((d) => d.id !== id)
   }
 
-  return { all, loaded, current, fetchAll, fetchByProject, fetchById, generate, update, saveLayout, remove }
+  return { all, loaded, current, fetchAll, fetchByProject, fetchById, generate, update, saveLayout, saveModuleLayout, remove }
 })

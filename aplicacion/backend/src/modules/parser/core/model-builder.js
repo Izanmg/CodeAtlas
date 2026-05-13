@@ -416,29 +416,56 @@ function parseDbmlRelations(tableText) {
 /**
  * Convierte la sección `## Functions` en un objeto donde cada clave es el
  * id de un archivo. Si hay subsecciones `### subsección`, cada una se
- * convierte en una clave. Si no las hay, todo va bajo la clave `_` como
- * lista plana.
+ * convierte en una clave. Si no las hay, todo va bajo la clave `_`.
+ *
+ * Cada función se devuelve como un objeto `{ signature, doc? }`. Una línea
+ * indentada con `doc: ...` justo debajo de la firma se asocia a esa función
+ * y aparece en el frontend al expandirla.
+ *
+ * Formato esperado:
+ *   ### auth-controller
+ *   - login(req, res)
+ *     doc: Verifica credenciales y firma un JWT.
+ *   - register(req, res)
  */
 function parseFunctions(text) {
   if (!text) return {}
 
   const result = {}
   let currentKey = '_'
+  let currentFn = null
 
-  for (const line of text.split('\n')) {
-    const subsection = line.match(/^###\s+(.+)/)
+  function flush() {
+    if (!currentFn) return
+    if (!result[currentKey]) result[currentKey] = []
+    result[currentKey].push(currentFn)
+    currentFn = null
+  }
+
+  for (const rawLine of text.split('\n')) {
+    const subsection = rawLine.match(/^###\s+(.+)/)
     if (subsection) {
+      flush()
       currentKey = subsection[1].trim()
-      result[currentKey] = []
+      if (!result[currentKey]) result[currentKey] = []
       continue
     }
 
-    const fn = line.replace(/^[-*]\s+/, '').trim()
-    if (fn && fn !== line) {       // la línea tenía marcador de lista
-      if (!result[currentKey]) result[currentKey] = []
-      result[currentKey].push(fn)
+    // Línea de continuación "doc: ..." indentada bajo la firma.
+    const docMatch = rawLine.match(/^\s+doc:\s*(.*)$/)
+    if (docMatch && currentFn) {
+      currentFn.doc = docMatch[1].trim()
+      continue
+    }
+
+    // Bullet → nueva función.
+    const bullet = rawLine.match(/^[-*]\s+(.+)/)
+    if (bullet) {
+      flush()
+      currentFn = { signature: bullet[1].trim() }
     }
   }
 
+  flush()
   return result
 }

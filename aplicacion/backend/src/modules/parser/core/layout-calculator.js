@@ -1,3 +1,4 @@
+// ---------- Canvas conceptual ----------
 const NODE_WIDTH   = 280
 const NODE_HEIGHT  = 160
 const V_GAP        = 60
@@ -12,16 +13,43 @@ const COL_X = {
   screens:  START_X + (NODE_WIDTH + COL_GAP) * 3,
 }
 
+// ---------- Deep-dive de cada módulo ----------
+const DD_COL_W       = 280   // ancho de cada columna-carpeta
+const DD_COL_GAP     = 60    // separación entre columnas
+const DD_FILE_TOP    = 80    // y del primer archivo de cada columna
+const DD_FILE_GAP    = 20    // separación vertical entre archivos
+const DD_FILE_BASE_H = 80    // altura mínima estimada de un FileNode
+const DD_FILE_FN_H   = 18    // altura por función
+
 /**
- * Calcula las coordenadas por defecto de cada nodo a partir del modelo.
- * Devuelve un objeto layout { [nodeId]: { x, y } }.
+ * Calcula las coordenadas por defecto del diagrama completo.
  *
- * Estrategia:
+ * Forma de retorno:
+ *   {
+ *     main:    { [nodeId]: { x, y } },    // canvas conceptual
+ *     modules: { [moduleId]: {            // deep-dive de cada módulo
+ *       [fileNodeId]: { x, y }
+ *     } }
+ *   }
+ *
+ * Estrategia del canvas conceptual:
  *   - database | backend | frontend | screens  (columnas izq → der)
  *   - flows: fila horizontal debajo de todas las columnas
  *   - systemRules: posición fija en la esquina superior izquierda
+ *
+ * Estrategia del deep-dive (por módulo):
+ *   - Una columna por carpeta declarada en `module.folders` (en orden)
+ *   - Archivos sin carpeta caen en una columna "raíz" al final
+ *   - Archivos apilados verticalmente con altura proporcional a su nº de funciones
  */
 export function calculateLayout(model) {
+  return {
+    main:    calculateMainLayout(model),
+    modules: calculateModuleLayouts(model),
+  }
+}
+
+function calculateMainLayout(model) {
   const layout = {}
 
   // system-rules: nodo global, posición fija
@@ -29,7 +57,6 @@ export function calculateLayout(model) {
     layout['system-rules'] = { x: START_X, y: 60 }
   }
 
-  // columnas: database, backend, frontend, screens
   const columns = {
     database: (model.database || []).map(e => e.id),
     backend:  (model.modules?.backend  || []).map(m => m.id),
@@ -53,7 +80,6 @@ export function calculateLayout(model) {
       : COLS_START_Y
   }
 
-  // flows: debajo de la columna más larga
   const maxBottom = Math.max(...Object.values(columnBottoms))
   const flowsY = maxBottom + V_GAP
   const flows = (model.flows || []).map(f => f.id)
@@ -65,4 +91,55 @@ export function calculateLayout(model) {
   })
 
   return layout
+}
+
+function calculateModuleLayouts(model) {
+  const result = {}
+  const allModules = [
+    ...(model.modules?.backend  || []),
+    ...(model.modules?.frontend || []),
+  ]
+
+  for (const m of allModules) {
+    const files = m.files ?? []
+    if (files.length === 0) continue
+
+    const folders = m.folders ?? []
+    const byFolder = new Map()
+    for (const f of folders) byFolder.set(f.id, [])
+    byFolder.set('_root', [])
+    for (const file of files) {
+      const bucket = file.folder && byFolder.has(file.folder) ? file.folder : '_root'
+      byFolder.get(bucket).push(file)
+    }
+
+    // Determina columnas con contenido en el mismo orden que el frontend.
+    const columns = []
+    for (const folder of folders) {
+      if (byFolder.get(folder.id).length === 0) continue
+      columns.push({ id: folder.id, files: byFolder.get(folder.id) })
+    }
+    if (byFolder.get('_root').length > 0) {
+      columns.push({ id: '_root', files: byFolder.get('_root') })
+    }
+
+    const moduleLayout = {}
+    const fnsByFileId = m.functions ?? {}
+    columns.forEach((col, ci) => {
+      const x = ci * (DD_COL_W + DD_COL_GAP)
+      let y = DD_FILE_TOP
+      for (const file of col.files) {
+        const fnCount = Array.isArray(fnsByFileId[file.id]) ? fnsByFileId[file.id].length : 0
+        const h = DD_FILE_BASE_H + Math.min(fnCount, 8) * DD_FILE_FN_H
+        moduleLayout[`file-${file.id}`] = { x, y }
+        y += h + DD_FILE_GAP
+      }
+    })
+
+    if (Object.keys(moduleLayout).length > 0) {
+      result[m.id] = moduleLayout
+    }
+  }
+
+  return result
 }

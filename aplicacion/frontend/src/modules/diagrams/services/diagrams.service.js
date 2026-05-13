@@ -53,6 +53,13 @@ export async function saveLayout(id, layout) {
   })
 }
 
+export async function saveModuleLayout(id, moduleId, layout) {
+  return http(`/diagrams/${id}/modules/${moduleId}/layout`, {
+    method: 'PATCH',
+    body: JSON.stringify({ layout }),
+  })
+}
+
 export async function update(id, { name, files = [] }, onProgress) {
   onProgress?.({ progress: 20, label: files.length ? 'Preparando archivos…' : 'Guardando…' })
 

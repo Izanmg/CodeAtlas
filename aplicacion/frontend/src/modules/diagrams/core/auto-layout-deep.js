@@ -4,32 +4,47 @@
  * Construye nodos + edges del "deep-dive" de un módulo concreto.
  *
  * El canvas interno representa la estructura de archivos como un UML:
- *   - Cada folder se renderiza como un contenedor visual con un label.
+ *   - Las carpetas se muestran en el panel CanvasFolders (no como nodos).
  *   - Cada file es un nodo UML con su tipo y la lista de funciones.
- *   - En el borde izquierdo aparecen "frontier nodes" para las pantallas
- *     que apuntan a algún archivo de este módulo (vía screen.file).
- *   - En el borde derecho aparecen frontier nodes para los módulos a los
- *     que este depende (module.dependsOn / consumesApi).
+ *   - Las edges internas son archivo→archivo vía file.imports.
  *
- * Las edges internas se construyen a partir de file.imports.
+ * Las pantallas vinculadas (screen.file) y los módulos dependidos
+ * (dependsOn / consumesApi) se devuelven como `screenDeps` y `moduleDeps`
+ * para que la vista los muestre en el panel CanvasModuleDeps (esquina
+ * superior derecha). Antes eran "frontier nodes" en el canvas — se
+ * movieron al panel para no ensuciar el lienzo.
  */
 
 const COL_FOLDER_W = 280   // ancho de cada columna-carpeta
 const COL_GAP = 60         // separación entre columnas
-const FOLDER_TOP = 60      // y donde empiezan las cabeceras de carpeta
-const FILE_TOP = 110       // y del primer archivo dentro de la carpeta
+const FILE_TOP = 80        // y del primer archivo de cada columna
 const FILE_GAP = 20        // separación vertical entre archivos
 const FILE_BASE_H = 80     // altura mínima estimada de un FileNode
 const FILE_FN_H = 18       // altura por función
-const FRONTIER_W = 200
-const FRONTIER_GAP = 40
+
+// Paleta de colores asignada por orden a las carpetas. Diseñada para que
+// cada carpeta sea distinguible en ambos temas (claro y oscuro).
+const FOLDER_COLORS = [
+  '#7c3aed', // violeta
+  '#06b6d4', // cyan
+  '#f59e0b', // ámbar
+  '#10b981', // esmeralda
+  '#ec4899', // rosa
+  '#f97316', // naranja
+  '#6366f1', // índigo
+  '#14b8a6', // teal
+]
+const ROOT_COLOR = '#94a3b8' // gris neutro para los archivos sin carpeta
 
 /**
  * @param {object} module — objeto del modelo (model.modules.backend[i] o frontend[i])
  * @param {object} model  — modelo completo (para resolver pantallas y módulos cruzados)
- * @returns {{ nodes: Array, edges: Array }}
+ * @param {object} [savedLayout] — posiciones guardadas para este módulo
+ *                                  (`layout.modules[module.id]`); si una entrada
+ *                                  no existe se usa la posición por defecto.
+ * @returns {{ nodes: Array, edges: Array, folders: Array }}
  */
-export function buildDeepDive(module, model) {
+export function buildDeepDive(module, model, savedLayout = {}) {
   const folders = module.folders ?? []
   const files = module.files ?? []
   const functions = module.functions ?? {}
@@ -45,21 +60,27 @@ export function buildDeepDive(module, model) {
   }
 
   // Determina las columnas que efectivamente tienen contenido.
+  // Asigna un color a cada columna en orden (las carpetas-de-yaml van
+  // primero; la columna "raíz" reusa un gris neutro).
   const columns = []
+  let colorIdx = 0
   for (const folder of folders) {
     if (byFolder.get(folder.id).length === 0) continue
     columns.push({
       id: folder.id,
       label: folder.id,
       path: folder.path,
+      color: FOLDER_COLORS[colorIdx % FOLDER_COLORS.length],
       files: byFolder.get(folder.id),
     })
+    colorIdx++
   }
   if (byFolder.get('_root').length > 0) {
     columns.push({
       id: '_root',
       label: 'raíz',
       path: '',
+      color: ROOT_COLOR,
       files: byFolder.get('_root'),
     })
   }
@@ -86,84 +107,58 @@ export function buildDeepDive(module, model) {
 
   // ---- Posicionamiento ----
   const nodes = []
-  const FRONTIER_X_LEFT = -FRONTIER_W - 80   // a la izquierda de la primera columna
-  const totalWidth = columns.length * (COL_FOLDER_W + COL_GAP)
-  const FRONTIER_X_RIGHT = totalWidth + 60
 
-  // Cabecera + caja de cada folder.
+  // Las columnas ya no llevan un nodo "folder" — esa información se
+  // muestra en el panel flotante CanvasFolders. Cada archivo lleva el
+  // color de su columna en `data.folderColor` para que el FileNode
+  // pueda pintar un acento de ese color.
   columns.forEach((col, ci) => {
     const x = ci * (COL_FOLDER_W + COL_GAP)
     let y = FILE_TOP
 
-    nodes.push({
-      id: `folder-${col.id}`,
-      type: 'folder',
-      position: { x, y: FOLDER_TOP },
-      data: {
-        kind: 'folder',
-        name: col.label,
-        path: col.path,
-        fileCount: col.files.length,
-        width: COL_FOLDER_W,
-      },
-      draggable: false,
-      selectable: false,
-    })
-
     for (const file of col.files) {
       const h = FILE_BASE_H + Math.min(file.functions.length, 8) * FILE_FN_H
+      const nodeId = `file-${file.id}`
+      // Si hay posición guardada para este FileNode, la usamos en lugar
+      // del default por columna.
+      const position = savedLayout[nodeId] ?? { x, y }
       nodes.push({
-        id: `file-${file.id}`,
+        id: nodeId,
         type: 'file',
-        position: { x, y },
+        position,
         data: {
           kind: 'file',
           fileId: file.id,
           path: file.path,
           fileType: file.type,
+          role: file.role,
           functions: file.functions,
+          folderColor: col.color,
           width: COL_FOLDER_W,
+          // _model permite que SidePanel y sus tabs reciban el archivo
+          // como cualquier otro nodo del modelo conceptual.
+          _model: {
+            id: file.id,
+            name: file.path,
+            description: null,
+            type: file.type,
+            role: file.role,
+            imports: file.imports,
+            functions: file.functions,
+            folderId: col.id,
+            folderPath: col.path,
+            folderColor: col.color,
+          },
         },
       })
       y += h + FILE_GAP
     }
   })
 
-  // Frontiers de pantallas (izquierda).
-  incomingScreens.forEach((s, i) => {
-    nodes.push({
-      id: `frontier-screen-${s.id}`,
-      type: 'frontier',
-      position: { x: FRONTIER_X_LEFT, y: FILE_TOP + i * (60 + FRONTIER_GAP) },
-      data: {
-        kind: 'frontier',
-        frontierType: 'screen',
-        name: s.name,
-        sub: (s.routes && s.routes[0]) || '',
-        targetFileId: s.file,
-        width: FRONTIER_W,
-      },
-      draggable: false,
-    })
-  })
-
-  // Frontiers de módulos (derecha).
-  outgoingModules.forEach((m, i) => {
-    nodes.push({
-      id: `frontier-module-${m.id}`,
-      type: 'frontier',
-      position: { x: FRONTIER_X_RIGHT, y: FILE_TOP + i * (60 + FRONTIER_GAP) },
-      data: {
-        kind: 'frontier',
-        frontierType: m.layer || 'backend',
-        name: m.name,
-        sub: m.id,
-        moduleId: m.id,
-        width: FRONTIER_W,
-      },
-      draggable: false,
-    })
-  })
+  // Ni las pantallas vinculadas (incomingScreens) ni los módulos dependidos
+  // (outgoingModules) se renderizan como nodos del canvas — ambos viven en
+  // el panel CanvasModuleDeps de la esquina superior derecha. Se devuelven
+  // abajo para que la vista los pase al panel.
 
   // ---- Edges ----
   const edges = []
@@ -184,20 +179,36 @@ export function buildDeepDive(module, model) {
     }
   })
 
-  // screen.file → edge frontier-screen → file (binding pantalla-archivo).
-  incomingScreens.forEach((s) => {
-    if (!localFileIds.has(s.file)) return
-    edges.push({
-      id: `bind-${s.id}-${s.file}`,
-      source: `frontier-screen-${s.id}`,
-      target: `file-${s.file}`,
-      type: 'floating',
-      style: { stroke: 'var(--kind-screen)', strokeWidth: 1.4, strokeOpacity: 0.85 },
-      data: { kind: 'binding' },
-    })
-  })
+  // Lista de carpetas (con color asignado) para que el panel flotante
+  // pueda renderizarlas en el orden correcto.
+  const foldersOut = columns.map((col) => ({
+    id: col.id,
+    label: col.label,
+    path: col.path,
+    color: col.color,
+    fileCount: col.files.length,
+  }))
 
-  return { nodes, edges }
+  // Lista de módulos dependidos (para el panel CanvasModuleDeps).
+  const moduleDeps = outgoingModules.map((m) => ({
+    id: m.id,
+    name: m.name,
+    layer: m.layer || 'backend',
+    via: module.consumesApi?.includes(m.id) ? 'consumes-api' : 'depends-on',
+  }))
+
+  // Lista de pantallas vinculadas a algún archivo del módulo (frontends).
+  // Solo se incluyen las que el archivo destino existe en este módulo.
+  const screenDeps = incomingScreens
+    .filter((s) => localFileIds.has(s.file))
+    .map((s) => ({
+      id: s.id,
+      name: s.name,
+      route: (s.routes && s.routes[0]) || '',
+      fileId: s.file,
+    }))
+
+  return { nodes, edges, folders: foldersOut, moduleDeps, screenDeps }
 }
 
 /**

@@ -53,6 +53,8 @@ export async function generate(req, res) {
 }
 
 export async function update(req, res) {
+  // console.log('[diagrams.update] PATCH /diagrams/:id ←', req.params.id, 'user:', req.userId, 'files:', req.files?.length ?? 0)
+
   const files = (req.files ?? []).map(f => ({
     filename: f.originalname,
     content:  f.buffer.toString('utf-8'),
@@ -65,6 +67,7 @@ export async function update(req, res) {
     })
     res.status(200).json(diagram)
   } catch (err) {
+    // console.log('[diagrams.update] error:', err.message)
     const isValidation = err.message.startsWith('[')
     const status = err.message.includes('acceso') ? 403 : isValidation ? 400 : 404
     res.status(status).json({ error: err.message })
@@ -74,6 +77,21 @@ export async function update(req, res) {
 export async function saveLayout(req, res) {
   try {
     await service.saveLayout(req.params.id, req.userId, req.body.layout)
+    res.status(204).send()
+  } catch (err) {
+    const status = err.message.includes('acceso') ? 403 : 404
+    res.status(status).json({ error: err.message })
+  }
+}
+
+export async function saveModuleLayout(req, res) {
+  try {
+    await service.saveModuleLayout(
+      req.params.id,
+      req.userId,
+      req.params.moduleId,
+      req.body.layout
+    )
     res.status(204).send()
   } catch (err) {
     const status = err.message.includes('acceso') ? 403 : 404

@@ -82,6 +82,32 @@ export function computeConnections(node, model) {
       const tab = model.database.find((x) => x.id === r.target)
       if (tab) out(`db-${r.target}`, tab.name, 'database', r.type)
     })
+  } else if (kind === 'file') {
+    const fileId = m.id
+    const allModules = [...model.modules.backend, ...model.modules.frontend]
+    const parentModule = allModules.find((mod) =>
+      (mod.files || []).some((f) => f.id === fileId)
+    )
+    if (!parentModule) {
+      result.total = 0
+      return result
+    }
+    const files = parentModule.files || []
+    // Salientes: file.imports (otros archivos del mismo módulo)
+    for (const targetId of (m.imports || [])) {
+      const tf = files.find((f) => f.id === targetId)
+      if (tf) out(`file-${targetId}`, tf.path, 'file', 'importa')
+    }
+    // Entrantes: otros archivos del mismo módulo que importan a este
+    for (const other of files) {
+      if (other.id === fileId) continue
+      if ((other.imports || []).includes(fileId)) {
+        inc(`file-${other.id}`, other.path, 'file', 'lo importa')
+      }
+    }
+    // Las pantallas que apuntan a este archivo se muestran en el panel
+    // CanvasModuleDeps de la esquina superior derecha, no aquí, para
+    // evitar duplicación con clicks que no llevan a ningún sitio.
   } else if (kind === 'flow') {
     (m.modules || []).forEach((mid) => {
       const back = model.modules.backend.find((x) => x.id === mid)

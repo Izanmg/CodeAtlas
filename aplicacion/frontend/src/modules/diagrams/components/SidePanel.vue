@@ -83,7 +83,8 @@ const tabs = computed(() => [
             <h2
               class="text-fg font-semibold m-0 whitespace-nowrap overflow-hidden text-ellipsis"
               style="font-size: 15px; letter-spacing: -0.01em; line-height: 1.2;"
-            >{{ m.name || 'Reglas del sistema' }}</h2>
+              :class="node?.data?.kind === 'file' ? 'font-mono' : ''"
+            >{{ m.name || (node?.data?.kind === 'rules' ? 'Reglas del sistema' : '') }}</h2>
           </div>
         </div>
         <button

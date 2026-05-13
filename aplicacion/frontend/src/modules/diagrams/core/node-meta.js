@@ -6,7 +6,7 @@
  * (canvas, side panel, leyenda, filtros) hablen el mismo idioma.
  */
 
-import { Server, LayoutPanelTop, Monitor, Database, Workflow, Shield } from 'lucide-vue-next'
+import { Server, LayoutPanelTop, Monitor, Database, Workflow, Shield, FileText } from 'lucide-vue-next'
 
 export const NODE_META = {
   backend:  { label: 'backend',  icon: Server,          color: 'var(--kind-backend)',  bg: 'var(--kind-backend-bg)'  },
@@ -15,6 +15,7 @@ export const NODE_META = {
   database: { label: 'db',       icon: Database,        color: 'var(--kind-database)', bg: 'var(--kind-database-bg)' },
   flow:     { label: 'flow',     icon: Workflow,        color: 'var(--kind-flow)',     bg: 'var(--kind-flow-bg)'     },
   rules:    { label: 'rules',    icon: Shield,          color: 'var(--kind-rules)',    bg: 'var(--kind-rules-bg)'    },
+  file:     { label: 'file',     icon: FileText,        color: 'var(--fg-muted)',      bg: 'var(--bg-muted)'         },
 }
 
 // Los flujos ya no se renderizan como nodos del canvas — se incrustan como

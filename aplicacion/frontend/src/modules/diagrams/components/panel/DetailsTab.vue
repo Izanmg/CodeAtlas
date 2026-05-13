@@ -77,6 +77,28 @@ function toggleFile(id) {
   openFiles.value = next
 }
 
+// Cada función puede llegar como string (formato antiguo) o como objeto
+// { signature, doc } (formato nuevo con `doc:` indentado). Normalizamos.
+function fnSignature(fn) {
+  return typeof fn === 'string' ? fn : fn.signature
+}
+function fnDoc(fn) {
+  return typeof fn === 'string' ? null : fn.doc
+}
+
+// Estado de despliegue por función (en el detalle de un archivo del
+// deep-dive). Reset al cambiar de nodo.
+const openFileFns = ref(new Set())
+function toggleFileFn(idx) {
+  const next = new Set(openFileFns.value)
+  if (next.has(idx)) next.delete(idx)
+  else next.add(idx)
+  openFileFns.value = next
+}
+watch(() => props.node.id, () => {
+  openFileFns.value = new Set()
+})
+
 // Reset al cambiar de nodo: cada módulo arranca con todo colapsado.
 watch(() => props.node.id, () => {
   openFolders.value = new Set()
@@ -271,20 +293,31 @@ const dbFields = computed(() =>
 
                 <!-- Funciones del archivo -->
                 <template v-if="openFiles.has(file.id)">
-                  <div
-                    v-for="(fn, fi) in file.functions"
-                    :key="fi"
-                    class="text-fg-muted font-mono"
-                    :style="{
-                      padding: '3px 9px 3px 52px',
-                      fontSize: '11px',
-                      lineHeight: '1.5',
-                      borderTop: '1px solid var(--border-subtle)',
-                      background: 'var(--bg)',
-                    }"
-                  >
-                    <span class="text-fg-faint" style="margin-right: 4px;">›</span>{{ fn }}
-                  </div>
+                  <template v-for="(fn, fi) in file.functions" :key="fi">
+                    <div
+                      class="text-fg-muted font-mono"
+                      :style="{
+                        padding: '3px 9px 3px 52px',
+                        fontSize: '11px',
+                        lineHeight: '1.5',
+                        borderTop: '1px solid var(--border-subtle)',
+                        background: 'var(--bg)',
+                      }"
+                    >
+                      <span class="text-fg-faint" style="margin-right: 4px;">›</span>{{ fnSignature(fn) }}
+                    </div>
+                    <div
+                      v-if="fnDoc(fn)"
+                      class="text-fg-faint"
+                      :style="{
+                        padding: '2px 9px 6px 62px',
+                        fontSize: '10.5px',
+                        lineHeight: '1.5',
+                        background: 'var(--bg)',
+                        whiteSpace: 'pre-wrap',
+                      }"
+                    >{{ fnDoc(fn) }}</div>
+                  </template>
                 </template>
               </template>
               <div
@@ -327,20 +360,31 @@ const dbFields = computed(() =>
             </button>
 
             <template v-if="openFiles.has(file.id)">
-              <div
-                v-for="(fn, fni) in file.functions"
-                :key="fni"
-                class="text-fg-muted font-mono"
-                :style="{
-                  padding: '3px 9px 3px 31px',
-                  fontSize: '11px',
-                  lineHeight: '1.5',
-                  borderTop: '1px solid var(--border-subtle)',
-                  background: 'var(--bg)',
-                }"
-              >
-                <span class="text-fg-faint" style="margin-right: 4px;">›</span>{{ fn }}
-              </div>
+              <template v-for="(fn, fni) in file.functions" :key="fni">
+                <div
+                  class="text-fg-muted font-mono"
+                  :style="{
+                    padding: '3px 9px 3px 31px',
+                    fontSize: '11px',
+                    lineHeight: '1.5',
+                    borderTop: '1px solid var(--border-subtle)',
+                    background: 'var(--bg)',
+                  }"
+                >
+                  <span class="text-fg-faint" style="margin-right: 4px;">›</span>{{ fnSignature(fn) }}
+                </div>
+                <div
+                  v-if="fnDoc(fn)"
+                  class="text-fg-faint"
+                  :style="{
+                    padding: '2px 9px 6px 41px',
+                    fontSize: '10.5px',
+                    lineHeight: '1.5',
+                    background: 'var(--bg)',
+                    whiteSpace: 'pre-wrap',
+                  }"
+                >{{ fnDoc(fn) }}</div>
+              </template>
             </template>
           </template>
         </div>
@@ -573,6 +617,126 @@ const dbFields = computed(() =>
             whiteSpace: 'pre-wrap',
           }"
         >{{ m.notes }}</div>
+      </div>
+    </template>
+
+    <!-- file (deep-dive de un módulo) -->
+    <template v-if="kind === 'file'">
+      <div v-if="m.role">
+        <PanelSectionHeader>Rol</PanelSectionHeader>
+        <div
+          class="text-fg rounded"
+          :style="{
+            fontSize: '12.5px',
+            lineHeight: '1.6',
+            padding: '9px 11px',
+            background: 'var(--bg-subtle)',
+            border: '1px solid var(--border-subtle)',
+            whiteSpace: 'pre-wrap',
+          }"
+        >{{ m.role }}</div>
+      </div>
+
+      <div v-if="m.folderPath || m.type">
+        <PanelSectionHeader>Metadata</PanelSectionHeader>
+        <div class="flex flex-col" style="gap: 4px;">
+          <div
+            v-if="m.folderPath"
+            class="flex items-center font-mono rounded"
+            :style="{
+              padding: '5px 9px',
+              background: 'var(--bg-subtle)',
+              border: '1px solid var(--border-subtle)',
+              fontSize: '11px',
+              gap: '8px',
+            }"
+          >
+            <span class="text-fg-faint uppercase" style="font-size: 9px; letter-spacing: 0.06em;">carpeta</span>
+            <span class="text-fg flex-1 truncate">{{ m.folderPath }}</span>
+          </div>
+          <div
+            v-if="m.type"
+            class="flex items-center font-mono rounded"
+            :style="{
+              padding: '5px 9px',
+              background: 'var(--bg-subtle)',
+              border: '1px solid var(--border-subtle)',
+              fontSize: '11px',
+              gap: '8px',
+            }"
+          >
+            <span class="text-fg-faint uppercase" style="font-size: 9px; letter-spacing: 0.06em;">tipo</span>
+            <span class="text-fg flex-1">{{ m.type }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="m.imports?.length">
+        <PanelSectionHeader :count="m.imports.length">Imports</PanelSectionHeader>
+        <div class="flex flex-col" style="gap: 3px;">
+          <div
+            v-for="imp in m.imports"
+            :key="imp"
+            class="font-mono text-fg rounded"
+            :style="{
+              fontSize: '11.5px',
+              padding: '5px 9px',
+              background: 'var(--bg-subtle)',
+              border: '1px solid var(--border-subtle)',
+            }"
+          >{{ imp }}</div>
+        </div>
+      </div>
+
+      <div v-if="m.functions?.length">
+        <PanelSectionHeader :count="m.functions.length">Funciones</PanelSectionHeader>
+        <div
+          class="flex flex-col rounded overflow-hidden"
+          :style="{ border: '1px solid var(--border-subtle)' }"
+        >
+          <template v-for="(fn, i) in m.functions" :key="i">
+            <button
+              class="w-full flex items-center text-left transition-colors duration-100"
+              :style="{
+                padding: '7px 10px',
+                fontSize: '12px',
+                fontFamily: 'monospace',
+                borderTop: i > 0 ? '1px solid var(--border-subtle)' : 'none',
+                background: openFileFns.has(i) ? 'var(--bg-muted)' : 'var(--bg-subtle)',
+                color: 'var(--fg)',
+                cursor: fnDoc(fn) ? 'pointer' : 'default',
+                gap: '6px',
+              }"
+              @click="fnDoc(fn) && toggleFileFn(i)"
+            >
+              <span
+                v-if="fnDoc(fn)"
+                class="text-fg-faint flex-shrink-0 transition-transform duration-150"
+                :style="{
+                  transform: openFileFns.has(i) ? 'rotate(90deg)' : 'none',
+                  display: 'inline-block',
+                  width: '10px',
+                }"
+              >▸</span>
+              <span v-else class="text-fg-faint flex-shrink-0" style="width: 10px;">›</span>
+              <span class="flex-1 truncate">{{ fnSignature(fn) }}</span>
+            </button>
+            <div
+              v-if="fnDoc(fn) && openFileFns.has(i)"
+              class="text-fg-muted"
+              :style="{
+                padding: '8px 12px 10px 26px',
+                fontSize: '12px',
+                lineHeight: '1.55',
+                background: 'var(--bg-muted)',
+                borderTop: '1px solid var(--border-subtle)',
+                whiteSpace: 'pre-wrap',
+              }"
+            >
+              {{ fnDoc(fn) }}
+            </div>
+          </template>
+        </div>
       </div>
     </template>
 
