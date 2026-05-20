@@ -4,6 +4,7 @@ type: system-rules
 
 ## Auth
 - Todas las rutas bajo /api requieren autenticación excepto /api/auth/login, /api/auth/register y /api/parser/* (uso interno)
+- Las rutas /api/bot/* requieren autenticación; el middleware se aplica con router.use(requireAuth) en bot.routes.js
 - Las sesiones usan JWT firmados con HS256 y caducan a los 7 días
 - El token se envía en cada petición como header Authorization: Bearer <token>
 - No hay roles diferenciados todavía: todos los usuarios autenticados tienen los mismos permisos sobre sus propios recursos
@@ -39,9 +40,16 @@ type: system-rules
 - El backend nunca devuelve el campo password_hash en ninguna respuesta
 - El frontend guarda el token de sesión en localStorage bajo la clave codeatlas:auth como JSON { user, token }
 - El frontend guarda los ajustes en localStorage bajo la clave codeatlas:settings como JSON { theme }
+- El frontend guarda la sesión activa del bot en localStorage bajo la clave codeatlas:bot:activeSession (sessionId UUID)
+- El frontend guarda el modelo Gemini seleccionado en localStorage bajo la clave codeatlas:bot:model
 - La subida de archivos usa multer con almacenamiento en memoria (sin temp files en disco)
 - La base de datos es MySQL accedida vía pool con mysql2/promise (límite 10 conexiones)
 - El parser persiste el modelo en memoria (parser.repository) solo para depuración; el cliente real es diagrams-backend que guarda en su tabla
 - Los diagramas tienen user_id propio (además de project_id) para que las queries de seguridad no necesiten JOIN con projects
 - Vue Flow se usa en modo controlado: nodes/edges son refs locales, los cambios se aplican manualmente desde @nodes-change
 - Pinia es el store global del frontend; cada módulo tiene su propio useXStore()
+- La API key de Google Gemini vive en la variable de entorno GEMINI_API_KEY del backend; nunca se expone al cliente
+- El asistente IA usa Google Gemini 2.5 (flash o flash-lite); el usuario elige el modelo en la UI y se persiste en localStorage
+- Los archivos generados por el bot se validan en el backend (path seguro, frontmatter YAML, campos obligatorios) antes de persistirse en bot_files
+- Si la validación falla tras un reintento automático, los archivos se devuelven al frontend con avisos pero no se persisten en BD
+- Los errores 429 de cuota de Gemini se traducen a HTTP 429 con cuerpo estructurado { code: 'QUOTA_EXCEEDED', model, suggestedModel } para que el frontend ofrezca cambiar de modelo

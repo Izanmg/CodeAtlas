@@ -11,6 +11,8 @@ backend:
     name: Parser de documentación
   - id: settings-backend
     name: Ajustes de usuario
+  - id: bot-backend
+    name: Asistente IA
 frontend:
   - id: auth-frontend
     name: Pantallas de autenticación
@@ -22,6 +24,8 @@ frontend:
     name: Diagramas
   - id: settings-frontend
     name: Ajustes
+  - id: bot-frontend
+    name: Asistente IA
 file-types:
   backend:
     - controller
@@ -48,3 +52,5 @@ CodeAtlas se organiza en módulos por responsabilidad funcional, siguiendo una a
 El backend (Express + MySQL) expone una API REST bajo el prefijo `/api`. Cada módulo agrupa sus rutas, controlador, servicio y repositorio. La autenticación se aplica como middleware (`requireAuth`) sobre las rutas que lo necesitan.
 
 El frontend (Vue 3 + Vite + Pinia) sigue el mismo patrón: cada módulo agrupa vistas, store y servicio HTTP. La comunicación con el backend pasa por un cliente HTTP centralizado en `src/lib/http.js` que inyecta el token JWT en cada petición.
+
+El módulo `bot-backend` integra la API de Google Gemini para generar documentación estructurada en formato CodeAtlas a partir de descripciones en lenguaje natural. Cubre el requisito de integración de IA del ciclo y produce archivos listos para ser parseados por `parser-backend`.
