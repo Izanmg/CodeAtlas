@@ -44,9 +44,12 @@ const newName = ref('')
 const newDesc = ref('')
 
 onMounted(async () => {
+  // force=true: el dashboard siempre carga datos frescos al entrar. El cache
+  // por `loaded` no se invalida al cambiar de sesión, así que sin esto la lista
+  // quedaba vacía/desactualizada hasta recargar la página.
   await Promise.all([
-    projectsStore.fetchAll(),
-    diagramsStore.fetchAll(),
+    projectsStore.fetchAll(true),
+    diagramsStore.fetchAll(true),
   ])
 })
 

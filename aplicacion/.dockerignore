@@ -1,0 +1,14 @@
+# .dockerignore para el build del backend (contexto = aplicacion/).
+# Solo necesitamos backend/ e ia-doc/.
+**/node_modules
+frontend
+deploy
+docs
+app-doc
+CodeAtlas-handoff
+*.zip
+*.tgz
+**/.env
+**/.env.*
+.git
+**/*.log

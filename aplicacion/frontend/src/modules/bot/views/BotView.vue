@@ -653,7 +653,7 @@ function formatRelativeDate(dateStr) {
                 variant="primary"
                 size="lg"
                 :disabled="!canSend"
-                @click="send"
+                @click="send()"
               >
                 <template #icon><Send :size="14" /></template>
                 Enviar

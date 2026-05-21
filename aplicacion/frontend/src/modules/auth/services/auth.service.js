@@ -58,7 +58,7 @@ export function getCurrentUser() {
 }
 
 export function logout() {
-  localStorage.removeItem(STORAGE_KEY)
+  localStorage.clear()
 }
 
 export async function updateUser(patch) {

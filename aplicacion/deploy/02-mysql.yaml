@@ -1,0 +1,94 @@
+# Base de datos MySQL 8 + volumen persistente + carga automatica de datos.
+#
+# El ConfigMap "codeatlas-initdb" (estructura + TODOS los datos) NO esta aqui:
+# se crea desde el volcado real con:
+#   kubectl create configmap codeatlas-initdb \
+#     --from-file=codeatlas-dump.sql -n grup5
+# MySQL ejecuta ese .sql automaticamente la PRIMERA vez que arranca (BD vacia).
+---
+# Volumen persistente para los datos de MySQL (no se pierden al reiniciar el pod)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: codeatlas-mysql-pvc
+  namespace: grup5
+spec:
+  storageClassName: nfs-client
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: codeatlas-mysql
+  namespace: grup5
+  labels:
+    app: codeatlas-mysql
+spec:
+  selector:
+    matchLabels:
+      app: codeatlas-mysql
+  replicas: 1
+  strategy:
+    # Recreate: nunca dos pods montando el mismo volumen a la vez
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: codeatlas-mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          args: ["--default-authentication-plugin=mysql_native_password"]
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: codeatlas-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_DATABASE
+              value: "codeatlas"
+            - name: MYSQL_USER
+              value: "codeatlas"
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: codeatlas-secret
+                  key: DB_PASSWORD
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "400m"
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+            - name: initdb
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: codeatlas-mysql-pvc
+        - name: initdb
+          configMap:
+            name: codeatlas-initdb
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: codeatlas-mysql
+  namespace: grup5
+spec:
+  selector:
+    app: codeatlas-mysql
+  ports:
+    - port: 3306
+      targetPort: 3306

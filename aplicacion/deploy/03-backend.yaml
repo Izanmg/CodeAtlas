@@ -1,0 +1,73 @@
+# API Node.js/Express. Se conecta a MySQL por el servicio "codeatlas-mysql".
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: codeatlas-backend
+  namespace: grup5
+  labels:
+    app: codeatlas-backend
+spec:
+  selector:
+    matchLabels:
+      app: codeatlas-backend
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: codeatlas-backend
+    spec:
+      # Necesario si tu proyecto en Harbor es privado (ver guia, paso 6).
+      # Si lo haces publico, puedes borrar estas 2 lineas.
+      imagePullSecrets:
+        - name: harbor-cred
+      containers:
+        - name: backend
+          image: kube0.lacetania.cat/grup5/codeatlas-backend:1.1
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: DB_HOST
+              value: "codeatlas-mysql"
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_USER
+              value: "codeatlas"
+            - name: DB_NAME
+              value: "codeatlas"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: codeatlas-secret
+                  key: DB_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: codeatlas-secret
+                  key: JWT_SECRET
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: codeatlas-secret
+                  key: GEMINI_API_KEY
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "384Mi"
+              cpu: "300m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: codeatlas-backend
+  namespace: grup5
+spec:
+  selector:
+    app: codeatlas-backend
+  ports:
+    - port: 3000
+      targetPort: 3000

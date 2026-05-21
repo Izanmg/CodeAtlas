@@ -1,0 +1,56 @@
+# Frontend Vue (Nginx). Sirve los estaticos y hace de proxy /api -> backend.
+# Su Service usa la IP fija de grup5 (10.96.5.101) a la que apunta el
+# Nginx proxy del cole, de modo que la app sea accesible en:
+#   http://grup5.infla.cat
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: codeatlas-frontend
+  namespace: grup5
+  labels:
+    app: codeatlas-frontend
+    type: frontend
+spec:
+  selector:
+    matchLabels:
+      app: codeatlas-frontend
+      type: frontend
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: codeatlas-frontend
+        type: frontend
+    spec:
+      # Borra estas 2 lineas si tu proyecto Harbor es publico.
+      imagePullSecrets:
+        - name: harbor-cred
+      containers:
+        - name: frontend
+          image: kube0.lacetania.cat/grup5/codeatlas-frontend:1.3
+          ports:
+            - containerPort: 80
+              name: http-port
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clusterip-grup5
+  namespace: grup5
+spec:
+  type: ClusterIP
+  selector:
+    app: codeatlas-frontend
+    type: frontend
+  ports:
+    - port: 80
+      targetPort: 80
+  clusterIP: 10.96.5.101
