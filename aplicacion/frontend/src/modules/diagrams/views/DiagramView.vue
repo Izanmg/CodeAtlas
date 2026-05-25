@@ -114,12 +114,24 @@ const dirty = computed(() => snapshotIdx.value > 0)
 const saving = ref(false)
 const saved  = ref(false)
 
+/**
+ * Captura las posiciones actuales de todos los nodos como un snapshot
+ * { [nodeId]: { x, y } } para el historial de undo/redo.
+ *
+ * @returns {Object<string, {x: number, y: number}>} Mapa de posiciones por nodo
+ */
 function captureSnapshot() {
   const snap = {}
   nodes.value.forEach((n) => { snap[n.id] = { x: n.position.x, y: n.position.y } })
   return snap
 }
 
+/**
+ * Apila un snapshot nuevo en el historial. Si se había deshecho, descarta los
+ * snapshots "futuros" antes de añadir (se abre una rama nueva del historial).
+ *
+ * @param {Object<string, {x: number, y: number}>} snap - Snapshot a guardar
+ */
 function pushSnapshot(snap) {
   snapshots.value = snapshots.value.slice(0, snapshotIdx.value + 1)
   snapshots.value.push(snap)
@@ -130,6 +142,13 @@ function pushSnapshot(snap) {
 // el cambio de posición en el prop :nodes durante un applySnapshot.
 const applyingSnapshot = ref(false)
 
+/**
+ * Aplica un snapshot moviendo cada nodo a su posición guardada. Activa
+ * applyingSnapshot para que handleNodesChange ignore los @nodes-change que
+ * VueFlow dispara por este cambio programático.
+ *
+ * @param {Object<string, {x: number, y: number}>} snap - Snapshot a aplicar
+ */
 function applySnapshot(snap) {
   applyingSnapshot.value = true
   nodes.value = nodes.value.map((n) => ({
@@ -139,23 +158,39 @@ function applySnapshot(snap) {
   nextTick(() => { applyingSnapshot.value = false })
 }
 
+/** Deshace el último movimiento de nodos (retrocede un snapshot). */
 function undo() {
   if (!canUndo.value) return
   snapshotIdx.value--
   applySnapshot(snapshots.value[snapshotIdx.value])
 }
 
+/** Rehace el movimiento previamente deshecho (avanza un snapshot). */
 function redo() {
   if (!canRedo.value) return
   snapshotIdx.value++
   applySnapshot(snapshots.value[snapshotIdx.value])
 }
 
+/**
+ * Convierte un id de nodo de Vue Flow (con prefijo db-/mod-/scr-/flow-) al id
+ * "crudo" del modelo que espera el backend. El nodo 'rules' mapea a 'system-rules'.
+ *
+ * @param {string} vfId - Id del nodo en Vue Flow
+ * @returns {string} Id del modelo sin prefijo
+ */
 function vfIdToRawId(vfId) {
   if (vfId === 'rules') return 'system-rules'
   return vfId.replace(/^(db|mod|flow|scr)-/, '')
 }
 
+/**
+ * Persiste las posiciones actuales de los nodos en el backend y reinicia el
+ * historial dejando este estado como nuevo punto "limpio" (sin cambios sin
+ * guardar). Muestra el indicador "Guardado" durante 2 segundos.
+ *
+ * @returns {Promise<void>}
+ */
 async function saveLayout() {
   saving.value = true
   try {
@@ -184,6 +219,13 @@ async function saveLayout() {
 // solo muta instancias GraphNode internas, no los objetos planos.
 const pendingDragPositions = new Map()
 
+/**
+ * Handler de @nodes-change de VueFlow. Acumula las posiciones durante el
+ * arrastre y, al soltar el nodo (dragging === false), commitea el movimiento a
+ * nodes.value y crea un snapshot para el historial de undo/redo.
+ *
+ * @param {Array<object>} changes - Cambios de posición emitidos por VueFlow
+ */
 function handleNodesChange(changes) {
   if (applyingSnapshot.value) return
 
@@ -228,17 +270,24 @@ onBeforeRouteLeave((to, _from, next) => {
   }
 })
 
+/** Cierra el modal de "salir sin guardar" y se queda en la vista. */
 function cancelLeave() {
   showLeaveModal.value = false
   pendingLeaveTarget.value = null
 }
 
+/** Descarta los cambios sin guardar y navega al destino que estaba pendiente. */
 function leaveWithoutSaving() {
   showLeaveModal.value = false
   forceLeave.value = true
   router.push(pendingLeaveTarget.value)
 }
 
+/**
+ * Guarda el layout y, si va bien, navega al destino pendiente.
+ *
+ * @returns {Promise<void>}
+ */
 async function saveAndLeave() {
   leaveSaving.value = true
   try {
@@ -308,12 +357,19 @@ function computeFlowChipsByNode(flows) {
   return map
 }
 
+/**
+ * Cambia a modo flujos y activa un flujo concreto. Lo dispara el chip de flujo
+ * que se pinta dentro de cada nodo.
+ *
+ * @param {{flowId: string}} payload - Flujo seleccionado
+ */
 function handlePickFlow({ flowId }) {
   mode.value = 'flows'
   activeFlowId.value = flowId
   selectedId.value = null
 }
 
+/** Flujo actualmente activo en modo flujos (o null si está en "todos los flujos"). */
 const activeFlow = computed(() =>
   flowsData.value.find((f) => f.id === activeFlowId.value) ?? null
 )
@@ -358,6 +414,12 @@ const flowEdges = computed(() => {
   })
 })
 
+/**
+ * Cambia el modo del canvas. Al entrar en 'flows' arranca mostrando todos los
+ * flujos (sin uno concreto activo).
+ *
+ * @param {'relations'|'flows'} next - Modo destino
+ */
 function setMode(next) {
   mode.value = next
   if (next === 'flows') {
@@ -367,6 +429,8 @@ function setMode(next) {
 }
 
 // ── Foco / filtros ───────────────────────────────────────────────────────
+// Conjunto a destacar cuando hay un nodo seleccionado por click: él mismo más
+// sus vecinos directos. Null si no hay selección.
 const focusSet = computed(() => {
   if (!selectedId.value) return null
   const set = new Set([selectedId.value])
@@ -514,10 +578,12 @@ const filteredEdges = computed(() => {
   })
 })
 
+// Nodo actualmente seleccionado (el que alimenta el side panel), o null.
 const selectedNode = computed(() =>
   nodes.value.find((n) => n.id === selectedId.value) || null
 )
 
+// Recuento de nodos por tipo, para los badges de los filtros de la toolbar.
 const counts = computed(() => {
   const c = { backend: 0, frontend: 0, screen: 0, database: 0, rules: 0 }
   nodes.value.forEach((n) => {
@@ -526,30 +592,46 @@ const counts = computed(() => {
   return c
 })
 
+/**
+ * Muestra u oculta todos los nodos de un tipo (filtros de la toolbar).
+ *
+ * @param {string} k - Tipo de nodo: backend | frontend | screen | database
+ */
 function toggleFilter(k) {
   visible.value = { ...visible.value, [k]: !visible.value[k] }
 }
 
+/** Selecciona un nodo al hacer click (abre el side panel y activa el foco). */
 function onNodeClick({ node }) { selectedId.value = node.id }
+
+/**
+ * Doble-click en un nodo: abre la vista detallada (deep-dive) del módulo. Solo
+ * aplica a módulos backend y frontend, que son los que tienen archivos dentro.
+ */
 function onNodeDoubleClick({ node }) {
-  // Doble-click en un módulo abre la vista detallada del módulo. Solo
-  // tienen vista interna los módulos backend y frontend (los que llevan
-  // folders/files/functions).
   if (node?.data?.kind !== 'backend' && node?.data?.kind !== 'frontend') return
   const moduleId = node.id.replace(/^mod-/, '')
   router.push(`/diagrams/${diagram.value.id}/modules/${moduleId}`)
 }
+/** Click en el lienzo vacío: deselecciona el nodo activo. */
 function onPaneClick()         { selectedId.value = null }
+
+/** Limpia por completo el foco: quita selección y búsqueda. */
 function clearFocus() {
   selectedId.value = null
   searchQuery.value = ''
   selectedSearchNodeId.value = null
 }
 
+/**
+ * Actualiza el texto de búsqueda. Si el usuario edita el texto después de haber
+ * fijado un nodo del autocompletado, lo deselecciona para volver al modo
+ * "preview con atenuado".
+ *
+ * @param {string} value - Texto introducido en el buscador
+ */
 function onSearchChange(value) {
   searchQuery.value = value
-  // Si el usuario modifica el texto, deseleccionamos el nodo bloqueado
-  // para volver al modo "preview con dim".
   if (selectedSearchNodeId.value) {
     const sel = nodes.value.find((n) => n.id === selectedSearchNodeId.value)
     if (!sel || (sel.data?.name || '') !== value) {
@@ -558,12 +640,24 @@ function onSearchChange(value) {
   }
 }
 
+/**
+ * Fija un nodo elegido en el autocompletado: bloquea la vista a ese nodo y sus
+ * vecinos directos, ocultando el resto.
+ *
+ * @param {string} id - Id del nodo seleccionado
+ */
 function onNodeSelected(id) {
   selectedSearchNodeId.value = id
   const node = nodes.value.find((n) => n.id === id)
   if (node) searchQuery.value = node.data?.name || ''
 }
 
+/**
+ * Atajos de teclado del canvas: Esc deselecciona, Ctrl/Cmd+Z deshace y
+ * Ctrl/Cmd+Y (o Ctrl/Cmd+Shift+Z) rehace.
+ *
+ * @param {KeyboardEvent} e
+ */
 function onKeydown(e) {
   if (e.key === 'Escape' && selectedId.value) {
     selectedId.value = null
@@ -583,6 +677,7 @@ function onKeydown(e) {
 onMounted(() => window.addEventListener('keydown', onKeydown))
 onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
+/** Vuelve a la vista del proyecto (o al dashboard si no se conoce el proyecto). */
 function goBack() {
   router.push(project.value ? `/projects/${project.value.id}` : '/')
 }

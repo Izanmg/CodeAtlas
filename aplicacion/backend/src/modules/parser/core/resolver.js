@@ -78,6 +78,7 @@ function warn(context, id, collection) {
   )
 }
 
+/** Avisa de referencias rotas en los módulos (database, depends-on, screens, consumes-api). */
 function checkModules(model, index) {
   for (const m of model.modules.backend) {
     for (const id of m.database) {
@@ -101,6 +102,7 @@ function checkModules(model, index) {
   }
 }
 
+/** Avisa de referencias rotas en las pantallas (module, navigates-to). */
 function checkScreens(model, index) {
   for (const s of model.screens) {
     if (!index.modules.has(s.module)) {
@@ -112,6 +114,7 @@ function checkScreens(model, index) {
   }
 }
 
+/** Avisa de referencias rotas en los flujos (screens, modules, database). */
 function checkFlows(model, index) {
   for (const f of model.flows) {
     for (const id of f.screens) {
@@ -128,6 +131,7 @@ function checkFlows(model, index) {
   }
 }
 
+/** Avisa de referencias rotas en las entidades de base de datos (used-by, relations). */
 function checkDatabase(model, index) {
   for (const e of model.database) {
     for (const id of e.usedBy) {

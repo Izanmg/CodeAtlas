@@ -61,6 +61,12 @@ const dirty   = computed(() => snapshotIdx.value > 0)
 const saving  = ref(false)
 const saved   = ref(false)
 
+/**
+ * Captura las posiciones de los FileNodes como snapshot { [nodeId]: { x, y } }.
+ * Solo incluye nodos de archivo (los frontiers/folders no se mueven).
+ *
+ * @returns {Object<string, {x: number, y: number}>} Mapa de posiciones
+ */
 function captureSnapshot() {
   const snap = {}
   nodes.value.forEach((n) => {
@@ -69,6 +75,12 @@ function captureSnapshot() {
   return snap
 }
 
+/**
+ * Apila un snapshot en el historial, descartando los "futuros" si se había
+ * deshecho (rama nueva del historial).
+ *
+ * @param {Object<string, {x: number, y: number}>} snap - Snapshot a guardar
+ */
 function pushSnapshot(snap) {
   snapshots.value = snapshots.value.slice(0, snapshotIdx.value + 1)
   snapshots.value.push(snap)
@@ -77,6 +89,12 @@ function pushSnapshot(snap) {
 
 const applyingSnapshot = ref(false)
 
+/**
+ * Mueve cada nodo a la posición de un snapshot. Activa applyingSnapshot para
+ * que handleNodesChange ignore los eventos del cambio programático.
+ *
+ * @param {Object<string, {x: number, y: number}>} snap - Snapshot a aplicar
+ */
 function applySnapshot(snap) {
   applyingSnapshot.value = true
   nodes.value = nodes.value.map((n) =>
@@ -85,11 +103,14 @@ function applySnapshot(snap) {
   nextTick(() => { applyingSnapshot.value = false })
 }
 
+/** Deshace el último movimiento de archivos (retrocede un snapshot). */
 function undo() {
   if (!canUndo.value) return
   snapshotIdx.value--
   applySnapshot(snapshots.value[snapshotIdx.value])
 }
+
+/** Rehace el movimiento previamente deshecho (avanza un snapshot). */
 function redo() {
   if (!canRedo.value) return
   snapshotIdx.value++
@@ -99,6 +120,13 @@ function redo() {
 // Acumulamos posiciones durante el drag y commiteamos al recibir
 // dragging:false. Misma técnica que DiagramView.
 const pendingDragPositions = new Map()
+
+/**
+ * Handler de @nodes-change: acumula posiciones durante el arrastre y, al soltar
+ * (dragging === false), commitea el movimiento y crea un snapshot.
+ *
+ * @param {Array<object>} changes - Cambios emitidos por VueFlow
+ */
 function handleNodesChange(changes) {
   if (applyingSnapshot.value) return
   let dragEnded = false
@@ -119,6 +147,12 @@ function handleNodesChange(changes) {
   nextTick(() => { applyingSnapshot.value = false })
 }
 
+/**
+ * Persiste las posiciones de los archivos del módulo en el backend y reinicia
+ * el historial dejando este estado como base. Muestra "Guardado" durante 2 s.
+ *
+ * @returns {Promise<void>}
+ */
 async function saveLayout() {
   if (!module.value) return
   saving.value = true
@@ -135,15 +169,18 @@ async function saveLayout() {
   }
 }
 
+// Nodo de archivo seleccionado (el que alimenta el side panel), o null.
 const selectedNode = computed(() =>
   nodes.value.find((n) => n.id === selectedId.value) || null
 )
 
+/** Click en un nodo: solo los archivos abren el side panel; el resto deselecciona. */
 function onNodeClick({ node }) {
-  // Solo los archivos abren el side panel; folders y frontiers no.
   if (node?.data?.kind === 'file') selectedId.value = node.id
   else selectedId.value = null
 }
+
+/** Click en el lienzo vacío: deselecciona. */
 function onPaneClick() { selectedId.value = null }
 
 const nodeTypes = {
@@ -156,6 +193,15 @@ const edgeTypes = {
 
 const { fitView } = useVueFlow()
 
+/**
+ * Carga el diagrama, localiza el módulo indicado y construye su deep-dive
+ * (nodos de archivo, edges, carpetas y dependencias). Redirige si el diagrama o
+ * el módulo no existen. Reinicia el estado de la vista y el historial.
+ *
+ * @param {string} id - Id del diagrama
+ * @param {string} mid - Id del módulo a mostrar
+ * @returns {Promise<void>}
+ */
 async function loadModule(id, mid) {
   const d = await diagramsStore.fetchById(id)
   if (!d) {
@@ -207,14 +253,16 @@ watch(
   },
 )
 
+// Lista de flujos del diagrama (para el selector y el panel de flujos).
 const flowsData = computed(() => diagram.value?.data?.model?.flows ?? [])
 
-// En modo flujos: si hay flujo activo, calcula sus edges numeradas y las
-// añade encima de las edges base (que se quedan tenues para contexto).
+// Flujo activo en modo flujos (o null si se muestran "todos los flujos").
 const activeFlow = computed(() =>
   flowsData.value.find((f) => f.id === activeFlowId.value) ?? null
 )
 
+// Edges numeradas del/los flujo(s) en modo flujos. Con flujo activo solo el
+// suyo; sin él, agrega las transiciones de todos los flujos del módulo.
 const flowEdgesComputed = computed(() => {
   if (mode.value !== 'flows' || !module.value) return []
   // Sin flujo activo: agrega de todos los flujos.
@@ -234,15 +282,27 @@ const filteredEdges = computed(() => {
   return edges.value
 })
 
+/**
+ * Cambia el modo del canvas. Al entrar en 'flows' arranca mostrando todos los flujos.
+ *
+ * @param {'relations'|'flows'} next - Modo destino
+ */
 function setMode(next) {
   mode.value = next
   if (next === 'flows') activeFlowId.value = null
 }
 
+/** Vuelve a la vista del diagrama completo. */
 function goBack() {
   router.push(`/diagrams/${route.params.id}`)
 }
 
+/**
+ * Atajos de teclado: Esc vuelve al diagrama, Ctrl/Cmd+Z deshace y
+ * Ctrl/Cmd+Y (o Ctrl/Cmd+Shift+Z) rehace.
+ *
+ * @param {KeyboardEvent} e
+ */
 function onKeydown(e) {
   if (e.key === 'Escape') {
     goBack()

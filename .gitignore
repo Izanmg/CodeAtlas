@@ -1,0 +1,9 @@
+# Archivos de despliegue con datos sensibles (NO subir a repos publicos)
+aplicacion/deploy/01-secret.yaml
+aplicacion/deploy/codeatlas-dump.sql
+codeatlas-src.tgz
+
+# Variables de entorno
+.env
+.env.*
+!.env.example

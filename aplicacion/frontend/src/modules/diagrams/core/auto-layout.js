@@ -126,6 +126,8 @@ export function autoLayout({ model, layout = {} }) {
   // ----- Edges -----
   const edges = []
 
+  // Devuelve el estilo de trazo (color, grosor, opacidad, guiones) según el
+  // tipo de relación que representa la arista.
   const edgeStyle = (kind) => {
     const map = {
       'consumes':        { stroke: 'var(--kind-frontend)', strokeWidth: 1.4, strokeOpacity: 0.7 },

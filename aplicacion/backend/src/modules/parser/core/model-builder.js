@@ -107,7 +107,18 @@ function splitSections(type, sections) {
 }
 
 // ---------- Constructores ----------
+// Cada constructor transforma el (yaml + secciones) de un archivo en la entrada
+// correspondiente del modelo, normalizando los campos kebab-case a camelCase.
 
+/**
+ * Construye una entrada de módulo. El resultado varía según la capa: los de
+ * backend exponen api/database y los de frontend screens/consumesApi/state.
+ *
+ * @param {object} yaml - Frontmatter del archivo de módulo
+ * @param {object} knownSections - Secciones reconocidas para el tipo 'module'
+ * @param {object} extensions - Secciones extra no reconocidas, conservadas tal cual
+ * @returns {object} Entrada de módulo lista para el modelo
+ */
 function buildModule(yaml, knownSections, extensions) {
   const base = {
     id: yaml.id,
@@ -140,6 +151,14 @@ function buildModule(yaml, knownSections, extensions) {
   }
 }
 
+/**
+ * Construye una entrada de pantalla a partir de su frontmatter y secciones.
+ *
+ * @param {object} yaml - Frontmatter del archivo de pantalla
+ * @param {object} knownSections - Secciones reconocidas para el tipo 'screen'
+ * @param {object} extensions - Secciones extra no reconocidas
+ * @returns {object} Entrada de pantalla lista para el modelo
+ */
 function buildScreen(yaml, knownSections, extensions) {
   return {
     id: yaml.id,
@@ -160,6 +179,14 @@ function buildScreen(yaml, knownSections, extensions) {
   }
 }
 
+/**
+ * Construye una entrada de flujo, parseando sus pasos (## Steps) a objetos.
+ *
+ * @param {object} yaml - Frontmatter del archivo de flujo
+ * @param {object} knownSections - Secciones reconocidas para el tipo 'flow'
+ * @param {object} extensions - Secciones extra no reconocidas
+ * @returns {object} Entrada de flujo lista para el modelo
+ */
 function buildFlow(yaml, knownSections, extensions) {
   return {
     id: yaml.id,
@@ -176,6 +203,15 @@ function buildFlow(yaml, knownSections, extensions) {
   }
 }
 
+/**
+ * Construye una entrada de entidad de base de datos. Combina las relaciones
+ * declaradas en YAML con las inferidas del bloque DBML, deduplicando por target.
+ *
+ * @param {object} yaml - Frontmatter del archivo de entidad
+ * @param {object} knownSections - Secciones reconocidas para el tipo 'entity'
+ * @param {object} extensions - Secciones extra no reconocidas
+ * @returns {object} Entrada de entidad lista para el modelo
+ */
 function buildEntity(yaml, knownSections, extensions) {
   const tableText = knownSections['table'] ?? null
   // Mezcla relaciones declaradas en YAML con las que se infieren de los
@@ -203,6 +239,15 @@ function buildEntity(yaml, knownSections, extensions) {
   }
 }
 
+/**
+ * Construye el bloque de reglas del sistema (auth, navegación, validación,
+ * convenciones y decisiones técnicas) a partir de sus secciones de lista.
+ *
+ * @param {object} yaml - Frontmatter del archivo de system-rules
+ * @param {object} knownSections - Secciones reconocidas para el tipo 'system-rules'
+ * @param {object} extensions - Secciones extra no reconocidas
+ * @returns {object} Bloque de reglas del sistema
+ */
 function buildSystemRules(yaml, knownSections, extensions) {
   return {
     auth: parseList(knownSections['auth'] ?? ''),

@@ -25,9 +25,16 @@ const IA_DOC_DIR  = path.resolve(__dirname, '../../../../ia-doc')
 const GUIA_PATH   = path.join(IA_DOC_DIR, 'GUIA-IA.md')
 const FORMATS_DIR = path.join(IA_DOC_DIR, 'formatos')
 
+// Cachés en memoria: la guía y cada formato se leen de disco una sola vez.
 let guiaContent = null
 let formatsCache = {}
 
+/**
+ * Carga (y cachea) el system prompt base desde GUIA-IA.md.
+ *
+ * @returns {string} Contenido de la guía
+ * @throws {Error} Si no se puede leer el archivo
+ */
 function loadGuia() {
   if (guiaContent !== null) return guiaContent
   try {
@@ -38,6 +45,13 @@ function loadGuia() {
   return guiaContent
 }
 
+/**
+ * Carga (y cachea) un formato detallado concreto desde formatos/<name>.md.
+ *
+ * @param {string} name - Nombre del formato sin extensión (p. ej. 'modulos')
+ * @returns {string} Contenido del formato
+ * @throws {Error} Si no se puede leer el archivo
+ */
 function loadFormat(name) {
   if (formatsCache[name]) return formatsCache[name]
   const filePath = path.join(FORMATS_DIR, `${name}.md`)
@@ -49,7 +63,16 @@ function loadFormat(name) {
   return formatsCache[name]
 }
 
+// Cliente de Gemini, creado de forma perezosa la primera vez que se usa.
 let ai = null
+
+/**
+ * Devuelve el cliente de Gemini, creándolo la primera vez. Necesita la variable
+ * de entorno GEMINI_API_KEY.
+ *
+ * @returns {GoogleGenAI} Cliente del SDK de Gemini
+ * @throws {Error} Si falta GEMINI_API_KEY
+ */
 function getClient() {
   if (ai) return ai
   const apiKey = process.env.GEMINI_API_KEY
@@ -75,6 +98,13 @@ export const MODELS = {
 }
 export const DEFAULT_MODEL = 'gemini-2.5-flash-lite'
 
+/**
+ * Dado un modelo, devuelve el otro permitido. Se usa para sugerir cambiar de
+ * modelo cuando uno agota su cuota diaria.
+ *
+ * @param {string} model - Modelo actual
+ * @returns {string} El modelo alternativo
+ */
 export function otherModel(model) {
   return model === 'gemini-2.5-flash' ? 'gemini-2.5-flash-lite' : 'gemini-2.5-flash'
 }
@@ -123,22 +153,14 @@ const RESPONSE_SCHEMA = {
 }
 
 /**
- * Llama a Gemini con la conversación actual y devuelve la respuesta parseada.
- *
- * @param {Array<{role: 'user'|'model', text: string}>} history
- *   Historial completo de la conversación (último mensaje del usuario incluido).
- * @param {Array<string>} formats
- *   Nombres de formatos a inyectar adicionalmente (sin .md): 'modulos', 'flujos',
- *   'base-datos', 'pantallas', 'reglas'. Cuando no se sabe qué se va a generar
- *   se puede pasar [] y el modelo se apoya solo en la GUIA-IA.md.
- * @returns {Promise<{reply: string, files: Array<{path: string, content: string}>}>}
- */
-/**
  * Construye un bloque informativo con los archivos ya generados en la
  * sesión. Se inyecta como parte del system prompt para que el modelo no
  * pierda de vista lo que ya hay (IDs usados, archivos creados) entre turnos
  * — especialmente útil cuando el usuario cambia de modelo a mitad de
  * conversación o tras pasar mucho tiempo.
+ *
+ * @param {Array<{path: string, content: string}>} existingFiles - Archivos ya generados
+ * @returns {string} Bloque de texto para el system prompt (vacío si no hay archivos)
  */
 function buildSessionStateBlock(existingFiles) {
   if (!existingFiles?.length) return ''
@@ -154,6 +176,22 @@ function buildSessionStateBlock(existingFiles) {
     `\`auth-backend-modules.md\` → id \`auth-backend\`, \`login-screens.md\` → id \`login\`.\n`
 }
 
+/**
+ * Llama a Gemini con la conversación actual y devuelve la respuesta ya parseada
+ * según RESPONSE_SCHEMA. Monta el system prompt (guía base + formatos detallados
+ * + estado de la sesión) y traduce los errores de cuota a un error etiquetado
+ * [bot:quota] con el modelo alternativo sugerido.
+ *
+ * @param {Array<{role: 'user'|'model', text: string}>} history
+ *   Historial completo de la conversación (último mensaje del usuario incluido).
+ * @param {string[]} [formats]
+ *   Nombres de formatos a inyectar (sin .md): 'modulos', 'flujos', 'base-datos',
+ *   'pantallas', 'reglas'. Si se pasa [], el modelo se apoya solo en GUIA-IA.md.
+ * @param {string} [model] - Modelo a usar (por defecto DEFAULT_MODEL)
+ * @param {Array<{path: string, content: string}>} [existingFiles] - Archivos ya generados
+ * @returns {Promise<{reply: string, files: Array<{path: string, content: string}>}>}
+ * @throws {Error} Si el modelo no está soportado, se agota la cuota o la respuesta no es JSON
+ */
 export async function chat(history, formats = [], model = DEFAULT_MODEL, existingFiles = []) {
   if (!MODELS[model]) {
     throw new Error(`[bot] Modelo no soportado: ${model}`)

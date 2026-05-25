@@ -82,12 +82,15 @@ const WELCOME_MESSAGE = {
     'preguntas paso a paso. ¿Por dónde empezamos?',
 }
 
+// Sesión actualmente abierta (la del activeId), o null.
 const activeSession = computed(() =>
   sessions.value.find(s => s.id === activeId.value) || null
 )
 
+// Árbol de carpetas/archivos generados, para pintarlo en el panel derecho.
 const fileTree = computed(() => buildTree(files.value))
 
+// True si se puede enviar: hay texto, no está cargando y hay sesión activa.
 const canSend = computed(() =>
   input.value.trim().length > 0 && !loading.value && !!activeId.value
 )
@@ -113,6 +116,11 @@ watch(activeId, (id) => {
   else localStorage.removeItem(ACTIVE_KEY)
 })
 
+/**
+ * Recarga la lista de sesiones del usuario desde la API.
+ *
+ * @returns {Promise<void>}
+ */
 async function refreshSessions() {
   try {
     sessions.value = await listSessions()
@@ -121,6 +129,13 @@ async function refreshSessions() {
   }
 }
 
+/**
+ * Abre una sesión: carga su historial y archivos y la marca como activa.
+ * No hace nada si ya era la sesión activa.
+ *
+ * @param {string} id - Id de la sesión a abrir
+ * @returns {Promise<void>}
+ */
 async function selectSession(id) {
   if (id === activeId.value) return
   switching.value = true
@@ -142,6 +157,11 @@ async function selectSession(id) {
   }
 }
 
+/**
+ * Crea una sesión nueva, refresca la lista y la abre.
+ *
+ * @returns {Promise<void>}
+ */
 async function onNewSession() {
   try {
     const created = await createSession()
@@ -152,6 +172,13 @@ async function onNewSession() {
   }
 }
 
+/**
+ * Borra una sesión (previa confirmación). Si era la activa, salta a la siguiente
+ * o crea una nueva para que siempre haya una conversación abierta.
+ *
+ * @param {string} id - Id de la sesión a borrar
+ * @returns {Promise<void>}
+ */
 async function onDeleteSession(id) {
   const session = sessions.value.find(s => s.id === id)
   if (!confirm(`¿Borrar la conversación "${session?.title || id}" y todos sus archivos?`)) return
@@ -174,6 +201,7 @@ async function onDeleteSession(id) {
   }
 }
 
+/** Ajusta la altura del textarea al contenido, hasta un máximo (auto-resize). */
 function autoResize() {
   const el = inputEl.value
   if (!el) return
@@ -181,11 +209,21 @@ function autoResize() {
   el.style.height = Math.min(el.scrollHeight, INPUT_MAX_H) + 'px'
 }
 
+/**
+ * Sincroniza el modelo `input` con el textarea y reajusta su altura.
+ *
+ * @param {InputEvent} e
+ */
 function onInput(e) {
   input.value = e.target.value
   autoResize()
 }
 
+/**
+ * Envía el mensaje al pulsar Enter (Shift+Enter inserta salto de línea).
+ *
+ * @param {KeyboardEvent} e
+ */
 function onKeydown(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault()
@@ -193,8 +231,16 @@ function onKeydown(e) {
   }
 }
 
+/**
+ * Envía un mensaje al bot y procesa la respuesta (texto, archivos generados y
+ * posibles avisos de validación). Distingue el error de cuota para ofrecer
+ * cambiar de modelo. Acepta un texto opcional para los reintentos automáticos
+ * tras cambiar de modelo (en ese caso no se vuelve a añadir al historial).
+ *
+ * @param {string} [messageText] - Texto a enviar; si se omite, usa el del input
+ * @returns {Promise<void>}
+ */
 async function send(messageText) {
-  // Acepta un texto opcional para reintentos automáticos tras cambio de modelo.
   const text = (messageText ?? input.value).trim()
   if (!text || loading.value || !activeId.value) return
 
@@ -258,6 +304,7 @@ async function switchModelAndRetry() {
   await send(lastMessage)
 }
 
+/** Hace scroll del chat hasta abajo del todo (tras añadir mensajes). */
 async function scrollToBottom() {
   await nextTick()
   if (messagesEl.value) {
@@ -265,6 +312,7 @@ async function scrollToBottom() {
   }
 }
 
+/** Descarga el zip con los archivos generados en la sesión activa. */
 async function onDownload() {
   if (!activeId.value) return
   try {
@@ -274,6 +322,13 @@ async function onDownload() {
   }
 }
 
+/**
+ * Borra un archivo generado (previa confirmación) y lo quita de la lista. Si era
+ * el que estaba en preview, cierra el preview.
+ *
+ * @param {string} path - Ruta del archivo a borrar
+ * @returns {Promise<void>}
+ */
 async function onDeleteFile(path) {
   if (!confirm(`Borrar ${path}?`)) return
   try {
@@ -285,10 +340,22 @@ async function onDeleteFile(path) {
   }
 }
 
+/**
+ * Abre un archivo en el panel de preview.
+ *
+ * @param {object} file - Archivo a previsualizar ({ path, content })
+ */
 function selectFile(file) {
   previewFile.value = file
 }
 
+/**
+ * Convierte la lista plana de archivos (con rutas tipo "app-doc/modules/x.md")
+ * en un árbol de carpetas y archivos para renderizarlo en el panel lateral.
+ *
+ * @param {Array<{path: string, content: string}>} files - Archivos generados
+ * @returns {object} Nodo raíz del árbol ya ordenado
+ */
 function buildTree(files) {
   const root = { type: 'dir', name: '', children: {} }
   for (const file of files) {
@@ -310,6 +377,13 @@ function buildTree(files) {
   return sortTree(root)
 }
 
+/**
+ * Ordena recursivamente el árbol: primero las carpetas y luego los archivos,
+ * cada grupo alfabéticamente. Convierte el mapa `children` en un array `entries`.
+ *
+ * @param {object} node - Nodo del árbol (dir o file)
+ * @returns {object} Nodo ordenado
+ */
 function sortTree(node) {
   if (node.type === 'file') return node
   const entries = Object.values(node.children).map(sortTree)
@@ -320,6 +394,14 @@ function sortTree(node) {
   return { ...node, entries }
 }
 
+/**
+ * Formatea una fecha como texto relativo corto ("ahora", "hace 5m", "hace 3h",
+ * "hace 2d") y cae a fecha absoluta a partir de una semana. Se usa en la lista
+ * de sesiones.
+ *
+ * @param {string} dateStr - Fecha en formato ISO
+ * @returns {string} Texto relativo o fecha local
+ */
 function formatRelativeDate(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr)

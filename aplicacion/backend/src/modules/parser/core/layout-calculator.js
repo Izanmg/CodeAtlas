@@ -1,3 +1,21 @@
+/**
+ * layout-calculator.js
+ *
+ * Calcula las posiciones (x, y) por defecto de todos los nodos de un diagrama a
+ * partir del modelo ya parseado. Es lo que coloca las cajas la primera vez que
+ * se genera un diagrama; luego el usuario puede arrastrarlas y ese layout se
+ * guarda aparte.
+ *
+ * Responsabilidad: solo geometría/posicionamiento. No interpreta el contenido
+ * de los .md (eso es model-builder.js) ni dibuja nada (eso es el frontend).
+ *
+ * Produce dos layouts:
+ *   - main:    el canvas conceptual (database / backend / frontend / screens / flows)
+ *   - modules: el deep-dive de cada módulo (archivos repartidos por carpetas)
+ *
+ * Las constantes de abajo son las medidas en píxeles que definen el espaciado.
+ */
+
 // ---------- Canvas conceptual ----------
 const NODE_WIDTH   = 280
 const NODE_HEIGHT  = 160
@@ -41,6 +59,9 @@ const DD_FILE_FN_H   = 18    // altura por función
  *   - Una columna por carpeta declarada en `module.folders` (en orden)
  *   - Archivos sin carpeta caen en una columna "raíz" al final
  *   - Archivos apilados verticalmente con altura proporcional a su nº de funciones
+ *
+ * @param {object} model - Modelo unificado del diagrama (salida del model-builder)
+ * @returns {{main: object, modules: object}} Posiciones del canvas y de cada deep-dive
  */
 export function calculateLayout(model) {
   return {
@@ -49,6 +70,14 @@ export function calculateLayout(model) {
   }
 }
 
+/**
+ * Coloca los nodos del canvas conceptual en columnas (database, backend,
+ * frontend, screens) y deja los flujos en una fila horizontal por debajo de
+ * todas las columnas. system-rules va fijo en la esquina superior izquierda.
+ *
+ * @param {object} model - Modelo unificado del diagrama
+ * @returns {object} Mapa { [nodeId]: { x, y } } del canvas principal
+ */
 function calculateMainLayout(model) {
   const layout = {}
 
@@ -93,6 +122,15 @@ function calculateMainLayout(model) {
   return layout
 }
 
+/**
+ * Calcula el layout del deep-dive de cada módulo: reparte sus archivos en
+ * columnas (una por carpeta declarada, más una columna "raíz" para los archivos
+ * sin carpeta) y los apila verticalmente. La altura reservada para cada archivo
+ * crece con su número de funciones para que las cajas no se solapen.
+ *
+ * @param {object} model - Modelo unificado del diagrama
+ * @returns {object} Mapa { [moduleId]: { [fileNodeId]: { x, y } } }
+ */
 function calculateModuleLayouts(model) {
   const result = {}
   const allModules = [

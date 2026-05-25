@@ -1,6 +1,25 @@
+/**
+ * diagrams.controller.js
+ *
+ * Capa HTTP del módulo de diagramas. Conecta las peticiones de Express con el
+ * service y traduce los resultados/errores a códigos de estado.
+ *
+ * Mapeo de errores que se repite en casi todas las funciones:
+ *   - mensaje con "acceso"     → 403 (el recurso es de otro usuario)
+ *   - mensaje que empieza por [ → 400 (error de validación del parser)
+ *   - resto                    → 404 o 500 según el caso
+ */
+
 import * as service from './diagrams.service.js'
 import * as repo   from './diagrams.repository.js'
 
+/**
+ * GET /api/diagrams/recent — diagramas más recientes del usuario (para el dashboard).
+ * Va directo al repositorio porque no hay reglas de negocio que aplicar.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export async function getRecent(req, res) {
   try {
     res.json(await repo.findRecentByUser(req.userId))
@@ -9,6 +28,12 @@ export async function getRecent(req, res) {
   }
 }
 
+/**
+ * GET /api/projects/:projectId/diagrams — lista los diagramas de un proyecto.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export async function getByProject(req, res) {
   try {
     const diagrams = await service.getByProject(req.params.projectId, req.userId)
@@ -19,6 +44,12 @@ export async function getByProject(req, res) {
   }
 }
 
+/**
+ * GET /api/diagrams/:id — devuelve un diagrama completo (modelo + layout).
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export async function getById(req, res) {
   try {
     const diagram = await service.getById(req.params.id, req.userId)
@@ -29,6 +60,14 @@ export async function getById(req, res) {
   }
 }
 
+/**
+ * POST /api/projects/:projectId/diagrams — genera un diagrama nuevo a partir de
+ * los .md subidos. Los archivos llegan como multipart (multer) en memoria y se
+ * convierten a { filename, content } antes de pasarlos al service.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export async function generate(req, res) {
   if (!req.files?.length)
     return res.status(400).json({ error: 'Se requiere al menos un archivo .md' })
@@ -52,9 +91,14 @@ export async function generate(req, res) {
   }
 }
 
+/**
+ * PATCH /api/diagrams/:id — actualiza un diagrama. Si se vuelven a subir .md,
+ * se reparsean y se regenera el modelo; si no, solo se cambia el nombre.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export async function update(req, res) {
-  // console.log('[diagrams.update] PATCH /diagrams/:id ←', req.params.id, 'user:', req.userId, 'files:', req.files?.length ?? 0)
-
   const files = (req.files ?? []).map(f => ({
     filename: f.originalname,
     content:  f.buffer.toString('utf-8'),
@@ -67,13 +111,19 @@ export async function update(req, res) {
     })
     res.status(200).json(diagram)
   } catch (err) {
-    // console.log('[diagrams.update] error:', err.message)
     const isValidation = err.message.startsWith('[')
     const status = err.message.includes('acceso') ? 403 : isValidation ? 400 : 404
     res.status(status).json({ error: err.message })
   }
 }
 
+/**
+ * PATCH /api/diagrams/:id/layout — guarda las posiciones de los nodos del
+ * canvas principal. Responde 204 sin cuerpo.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export async function saveLayout(req, res) {
   try {
     await service.saveLayout(req.params.id, req.userId, req.body.layout)
@@ -84,6 +134,13 @@ export async function saveLayout(req, res) {
   }
 }
 
+/**
+ * PATCH /api/diagrams/:id/modules/:moduleId/layout — guarda las posiciones de
+ * los nodos del deep-dive de un módulo concreto. Responde 204 sin cuerpo.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export async function saveModuleLayout(req, res) {
   try {
     await service.saveModuleLayout(
@@ -99,6 +156,12 @@ export async function saveModuleLayout(req, res) {
   }
 }
 
+/**
+ * DELETE /api/diagrams/:id — borra un diagrama. Responde 204 sin cuerpo.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export async function remove(req, res) {
   try {
     await service.remove(req.params.id, req.userId)

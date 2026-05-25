@@ -9,6 +9,14 @@
 import * as service from './bot.service.js'
 import { buildZip } from './bot.zip.js'
 
+/**
+ * Traduce un error del service a una respuesta HTTP. Distingue tres casos por
+ * el prefijo del mensaje: cuota agotada (429 con info para cambiar de modelo),
+ * error del usuario (400) o fallo interno (500).
+ *
+ * @param {import('express').Response} res
+ * @param {Error} err - Error lanzado por el service
+ */
 function sendError(res, err) {
   // Errores de cuota → 429 con info estructurada para que el frontend
   // pueda ofrecer cambiar de modelo automáticamente.
@@ -24,6 +32,12 @@ function sendError(res, err) {
   res.status(isUserError ? 400 : 500).json({ error: err.message })
 }
 
+/**
+ * GET /api/bot/sessions — lista las sesiones de chat del usuario.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export async function getSessions(req, res) {
   try {
     const sessions = await service.listSessions(req.userId)
@@ -33,6 +47,12 @@ export async function getSessions(req, res) {
   }
 }
 
+/**
+ * POST /api/bot/sessions — crea una sesión de chat nueva.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export async function createSession(req, res) {
   try {
     const session = await service.createSession(req.userId)
@@ -42,6 +62,12 @@ export async function createSession(req, res) {
   }
 }
 
+/**
+ * GET /api/bot/sessions/:sessionId — devuelve el estado de una sesión.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export async function getSession(req, res) {
   try {
     const state = await service.getSessionState(req.params.sessionId, req.userId)
@@ -51,6 +77,12 @@ export async function getSession(req, res) {
   }
 }
 
+/**
+ * PATCH /api/bot/sessions/:sessionId — renombra una sesión. Responde 204.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export async function patchSession(req, res) {
   const { title } = req.body
   if (!title) return res.status(400).json({ error: 'title es obligatorio' })
@@ -62,6 +94,12 @@ export async function patchSession(req, res) {
   }
 }
 
+/**
+ * DELETE /api/bot/sessions/:sessionId — borra una sesión. Responde 204.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export async function deleteSession(req, res) {
   try {
     await service.deleteSession(req.params.sessionId, req.userId)
@@ -71,6 +109,13 @@ export async function deleteSession(req, res) {
   }
 }
 
+/**
+ * POST /api/bot/sessions/:sessionId/message — envía un mensaje al bot y devuelve
+ * su respuesta junto a los archivos generados.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export async function postMessage(req, res) {
   const { message, model } = req.body
   if (!message || typeof message !== 'string') {
@@ -84,6 +129,12 @@ export async function postMessage(req, res) {
   }
 }
 
+/**
+ * GET /api/bot/sessions/:sessionId/files — lista los archivos generados.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export async function getFilesList(req, res) {
   try {
     const files = await service.listFiles(req.params.sessionId, req.userId)
@@ -93,6 +144,13 @@ export async function getFilesList(req, res) {
   }
 }
 
+/**
+ * DELETE /api/bot/sessions/:sessionId/files?path=... — borra un archivo generado.
+ * Responde 204, o 404 si el archivo no existía.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export async function deleteOneFile(req, res) {
   const filePath = req.query.path
   if (!filePath) {
@@ -107,6 +165,13 @@ export async function deleteOneFile(req, res) {
   }
 }
 
+/**
+ * GET /api/bot/sessions/:sessionId/zip — descarga en .zip todos los archivos
+ * generados en la sesión. Responde 404 si todavía no hay archivos.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export async function downloadZip(req, res) {
   try {
     const buffer = await buildZip(req.params.sessionId, req.userId)

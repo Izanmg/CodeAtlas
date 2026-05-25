@@ -83,6 +83,9 @@ export async function getSessionState(sessionId, userId) {
   return { ...session, files: fileRows }
 }
 
+/**
+ * Renombra una sesión del usuario. Devuelve true si se actualizó alguna fila.
+ */
 export async function renameSession(sessionId, userId, title) {
   const [result] = await pool.query(
     'UPDATE bot_sessions SET title = ? WHERE id = ? AND user_id = ?',
@@ -91,6 +94,10 @@ export async function renameSession(sessionId, userId, title) {
   return result.affectedRows > 0
 }
 
+/**
+ * Borra una sesión del usuario (sus archivos caen por ON DELETE CASCADE).
+ * Devuelve true si se borró alguna fila.
+ */
 export async function deleteSession(sessionId, userId) {
   // El ON DELETE CASCADE en bot_files se encarga de los archivos.
   const [result] = await pool.query(
@@ -131,6 +138,10 @@ export async function upsertFiles(sessionId, files) {
   )
 }
 
+/**
+ * Borra un archivo concreto de una sesión, comprobando antes que la sesión es
+ * del usuario. Devuelve true si se borró alguna fila.
+ */
 export async function deleteFile(sessionId, userId, filePath) {
   // Verificar pertenencia antes de borrar para no permitir borrados cruzados.
   const session = await findSession(sessionId, userId)
@@ -142,6 +153,9 @@ export async function deleteFile(sessionId, userId, filePath) {
   return result.affectedRows > 0
 }
 
+/**
+ * Devuelve los archivos generados de una sesión, comprobando que es del usuario.
+ */
 export async function getFiles(sessionId, userId) {
   const session = await findSession(sessionId, userId)
   if (!session) throw new Error('[bot] Sesión no encontrada')

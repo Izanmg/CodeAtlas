@@ -1,11 +1,25 @@
+/**
+ * diagrams.routes.js
+ *
+ * Define los endpoints del módulo de diagramas. Todas las rutas son privadas
+ * (requireAuth). Las que reciben archivos .md usan multer con almacenamiento en
+ * memoria: los .md no se guardan en disco, se leen del buffer y se parsean al
+ * vuelo.
+ *
+ * Este router se monta bajo /api en app.js, por eso las rutas incluyen el
+ * prefijo completo (/projects/... y /diagrams/...).
+ */
+
 import { Router } from 'express'
 import multer from 'multer'
 import { getRecent, getByProject, getById, generate, update, saveLayout, saveModuleLayout, remove } from './diagrams.controller.js'
 import { requireAuth } from '../auth/auth.middleware.js'
 
+// memoryStorage: los archivos subidos quedan en req.files[].buffer, nunca en disco.
 const upload = multer({ storage: multer.memoryStorage() })
 const router = Router()
 
+// Exige token válido para cualquier ruta de diagramas.
 router.use(requireAuth)
 
 // Diagramas de un proyecto
